@@ -1,4 +1,4 @@
-# OLAA Habit
+# Olaa Habits
 
 Independent habit tracking and personal growth platform
 
@@ -23,3 +23,6 @@ See `SECURITY.md` and `docs/security/SECURITY_BASELINE.md`.
 
 ## Contributing
 See `CONTRIBUTING.md`.
+
+## Olaa ecosystem
+Kiến trúc 22 nhánh, ADR, Module Registry và contract dùng chung nằm ở [`olaa-platform`](https://github.com/olaa-ecosystem/olaa-platform). Hướng dẫn cho Claude Code: `CLAUDE.md`.
