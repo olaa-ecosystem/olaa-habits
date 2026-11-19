@@ -23,14 +23,14 @@ describe('onboarding to first check-in', () => {
 
     await user.click(screen.getByRole('button', { name: /bắt đầu/i }));
     await user.type(screen.getByPlaceholderText(/tên của bạn/i), 'Mai');
-    await user.click(screen.getByRole('button', { name: /đọc sách 10 trang/i }));
+    await user.click(screen.getByRole('button', { name: /ngủ trước 23 giờ/i }));
     await user.click(screen.getByRole('button', { name: /tạo 2 thói quen/i }));
 
     expect(screen.getByRole('heading', { name: 'Chào Mai!' })).toBeInTheDocument();
     const list = screen.getByRole('list', { name: /thói quen hôm nay/i });
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
 
-    const check = screen.getByRole('button', { name: /đọc sách 10 trang: đánh dấu/i });
+    const check = screen.getByRole('button', { name: /ngủ trước 23 giờ: đánh dấu/i });
     await user.click(check);
     expect(check).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('1 ngày')).toBeInTheDocument();

@@ -1,13 +1,26 @@
 import { addDays, daysBetween, weekStartOf, type DayKey } from '../../utils/date';
 import { isDayBased, isScheduledOn, type Schedule } from '../scheduling/schedule';
+import type { Outcome } from '../habit-tracking/checkins';
+
+/** A stretch of days with one schedule (from the habit's plan history). */
+export interface Segment {
+  from: DayKey;
+  to: DayKey;
+  schedule: Schedule;
+}
 
 export interface StreakInput {
-  schedule: Schedule;
-  /** First day the habit existed. */
+  /** Either one schedule for the whole life of the habit… */
+  schedule?: Schedule;
+  /** …or the schedule history, oldest first (PRD v1.0 §7.3). */
+  segments?: Segment[];
   createdOn: DayKey;
   /** Last day to consider (today, or the archive day). */
   today: DayKey;
-  done: (day: DayKey) => boolean;
+  /** Outcome of a day; `done` is the simple binary shortcut. */
+  outcome?: (day: DayKey) => Outcome;
+  done?: (day: DayKey) => boolean;
+  /** Days that are excused for this habit: global freezes and pauses. */
   frozen: (day: DayKey) => boolean;
 }
 
@@ -17,60 +30,69 @@ export interface Streak {
   unit: 'day' | 'week';
 }
 
+function segmentsOf(input: StreakInput): Segment[] {
+  if (input.segments && input.segments.length > 0) {
+    return input.segments
+      .map((s) => ({
+        ...s,
+        from: s.from < input.createdOn ? input.createdOn : s.from,
+        to: s.to > input.today ? input.today : s.to,
+      }))
+      .filter((s) => s.from <= s.to);
+  }
+  return [
+    { from: input.createdOn, to: input.today, schedule: input.schedule ?? { kind: 'daily' } },
+  ];
+}
+
 /**
- * Current and best streak (module 02.04, REQ-02-020).
- * - Day-based habits count completed scheduled days. A frozen day keeps the streak without
- *   adding to it; today not done yet is still pending, so it never breaks the streak.
- * - "N times a week" habits count weeks that reached N. Each frozen day lowers that week's
- *   target by one. The current week is pending until it ends; the first (partial) week never
- *   breaks a streak.
+ * Current and best streak (module 02.04). A done day adds one. Skipped, partial, frozen and
+ * paused days keep the streak without adding (humane tracking, PRD v1.0 §7.3); today not done
+ * yet is pending. "N times a week" stretches count weeks that met the quota, where every
+ * skipped or excused day lowers that week's quota by one. A schedule change starts a new
+ * stretch but keeps the run going; past days are judged by the schedule that applied then.
  */
 export function computeStreak(input: StreakInput): Streak {
-  if (input.createdOn > input.today) return { current: 0, best: 0, unit: unitOf(input.schedule) };
-  return isDayBased(input.schedule) ? dayStreak(input) : weekStreak(input);
-}
+  const segments = segmentsOf(input);
+  const last = segments[segments.length - 1];
+  const unit: Streak['unit'] = last && !isDayBased(last.schedule) ? 'week' : 'day';
+  if (input.createdOn > input.today || segments.length === 0) return { current: 0, best: 0, unit };
+  const outcome = input.outcome ?? ((d: DayKey) => (input.done?.(d) ? 'done' : 'none'));
 
-function unitOf(schedule: Schedule): Streak['unit'] {
-  return isDayBased(schedule) ? 'day' : 'week';
-}
-
-function dayStreak({ schedule, createdOn, today, done, frozen }: StreakInput): Streak {
   let run = 0;
   let best = 0;
-  for (const day of daysBetween(createdOn, today)) {
-    if (!isScheduledOn(schedule, day)) continue;
-    if (done(day)) {
-      run += 1;
-      best = Math.max(best, run);
-    } else if (frozen(day) || day === today) {
-      continue;
-    } else {
-      run = 0;
-    }
-  }
-  return { current: run, best, unit: 'day' };
-}
+  const hit = () => {
+    run += 1;
+    best = Math.max(best, run);
+  };
 
-function weekStreak({ schedule, createdOn, today, done, frozen }: StreakInput): Streak {
-  const times = schedule.kind === 'perWeek' ? schedule.times : 1;
-  const firstWeek = weekStartOf(createdOn);
-  const currentWeek = weekStartOf(today);
-  let run = 0;
-  let best = 0;
-  for (let week = firstWeek; week <= currentWeek; week = addDays(week, 7)) {
-    const days = daysBetween(week, addDays(week, 6)).filter((d) => d >= createdOn && d <= today);
-    const completed = days.filter(done).length;
-    const target = Math.max(0, times - days.filter(frozen).length);
-    if (target > 0 && completed >= target) {
-      run += 1;
-      best = Math.max(best, run);
-    } else if (target === 0 || week === currentWeek || week === firstWeek) {
-      continue;
+  for (const seg of segments) {
+    if (isDayBased(seg.schedule)) {
+      for (const day of daysBetween(seg.from, seg.to)) {
+        if (!isScheduledOn(seg.schedule, day)) continue;
+        const o = outcome(day);
+        if (o === 'done') hit();
+        else if (o === 'skipped' || o === 'partial' || input.frozen(day) || day === input.today)
+          continue;
+        else run = 0;
+      }
     } else {
-      run = 0;
+      const times = seg.schedule.kind === 'perWeek' ? seg.schedule.times : 1;
+      const currentWeek = weekStartOf(input.today);
+      for (let week = weekStartOf(seg.from); week <= weekStartOf(seg.to); week = addDays(week, 7)) {
+        const days = daysBetween(week, addDays(week, 6)).filter(
+          (d) => d >= seg.from && d <= seg.to,
+        );
+        const excused = days.filter((d) => input.frozen(d) || outcome(d) === 'skipped').length;
+        const completed = days.filter((d) => outcome(d) === 'done').length;
+        const target = Math.max(0, times - excused);
+        if (target > 0 && completed >= target) hit();
+        else if (target === 0 || week === currentWeek || days.length < 7) continue;
+        else run = 0;
+      }
     }
   }
-  return { current: run, best, unit: 'week' };
+  return { current: run, best, unit };
 }
 
 /** Checks so far in the week containing `today` (for "2/3 this week"). */

@@ -1,19 +1,15 @@
 import { useSyncExternalStore } from 'react';
 import { clearSaved, loadJson, saveJson } from '../services/storage';
 import { toDayKey } from '../utils/date';
-import { awardBadges, initialState, STATE_VERSION, type AppState } from './appState';
+import { awardBadges, initialState, migrateState, type AppState } from './appState';
 
-function isAppState(value: unknown): value is AppState {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as { version?: unknown }).version === STATE_VERSION
-  );
+function isSaved(value: unknown): value is AppState {
+  return migrateState(value) !== null;
 }
 
 function load(): AppState {
-  // Merge with defaults so fields added later get sensible values.
-  return { ...initialState(), ...loadJson(initialState, isAppState) };
+  // Older saved versions are migrated; defaults fill fields added later.
+  return migrateState(loadJson(initialState, isSaved)) ?? initialState();
 }
 
 let state: AppState = load();
@@ -34,7 +30,7 @@ export const appStore = {
   },
   /** Replace the whole state, e.g. with data downloaded from the account. */
   replace(next: AppState): void {
-    commit({ ...initialState(), ...next });
+    commit(migrateState(next) ?? initialState());
   },
   reset(): void {
     clearSaved();

@@ -5,7 +5,10 @@ import { appStore, useAppState } from '../../stores/appStore';
 import {
   activeHabits,
   canEditDay,
-  isDone,
+  entryOf,
+  logValue,
+  outcomeOn,
+  setSkipped,
   orderedHabits,
   setFreeze,
   toggleCheckin,
@@ -20,9 +23,18 @@ import {
   weekStartOf,
   type DayKey,
 } from '../../utils/date';
-import { isScheduledOn, WEEKDAY_SHORT } from '../scheduling/schedule';
+import { isDayBased, isScheduledOn, WEEKDAY_SHORT } from '../scheduling/schedule';
+import { isMeasured, isPausedOn, planOn, unitLabel } from '../habit-management/types';
+import type { Outcome } from '../habit-tracking/checkins';
 import { canFreeze, canUnfreeze, freezesLeftIn } from '../streaks/freeze';
-import { dayStatus, type DayStatus } from './calendarDay';
+import { dayStatus, scheduleOn, type DayStatus } from './calendarDay';
+
+const OUTCOME_TEXT: Record<Outcome, string> = {
+  done: 'Đã xong',
+  partial: 'Một phần',
+  skipped: 'Bỏ qua',
+  none: 'Chưa xong',
+};
 
 const STATUS_LABEL: Record<DayStatus, string> = {
   none: '',
@@ -31,6 +43,7 @@ const STATUS_LABEL: Record<DayStatus, string> = {
   missed: 'bỏ lỡ',
   frozen: 'đóng băng',
   pending: 'chưa xong',
+  skipped: 'bỏ qua',
 };
 
 function shiftMonth(month: string, delta: number): string {
@@ -136,6 +149,10 @@ export function CalendarPage({ today }: { today: DayKey }) {
             <span className="day-dot day--frozen" />
             Đóng băng
           </li>
+          <li>
+            <span className="day-dot day--skipped" />
+            Bỏ qua
+          </li>
         </ul>
       </div>
 
@@ -148,9 +165,11 @@ export function CalendarPage({ today }: { today: DayKey }) {
 
   // A render helper, not a component: it reads this page's state and must not remount on update.
   function renderDayPanel(day: DayKey) {
-    const habits = activeHabits(state).filter(
-      (h) => h.createdOn <= day && isScheduledOn(h.schedule, day),
-    );
+    const habits = activeHabits(state).filter((h) => {
+      if (h.createdOn > day || isPausedOn(h, day)) return false;
+      const schedule = scheduleOn(h, day, today);
+      return !isDayBased(schedule) || isScheduledOn(schedule, day);
+    });
     const editable = habits.filter((h) => canEditDay(h, day, today));
     const frozen = Boolean(state.freezes[day]);
     const freezeCheck = canFreeze(state.freezes, day, today);
@@ -163,23 +182,64 @@ export function CalendarPage({ today }: { today: DayKey }) {
               <li className="muted small">Không có thói quen nào có lịch vào ngày này.</li>
             )}
             {habits.map((h) => {
-              const done = isDone(state, h.id, day);
+              const outcome = outcomeOn(state, h, day);
+              const entry = entryOf(state, h.id, day);
               const canEdit = editable.includes(h);
+              const skipped = outcome === 'skipped';
               return (
-                <li key={h.id}>
+                <li key={h.id} className="day-panel__item">
                   <HabitBadge habit={h} size={32} />
-                  <span>{h.name}</span>
-                  {canEdit ? (
+                  <span className="day-panel__name">
+                    {h.name}
+                    {entry?.note && <span className="muted small">“{entry.note}”</span>}
+                  </span>
+                  {!canEdit ? (
+                    <span className="muted small">{OUTCOME_TEXT[outcome]}</span>
+                  ) : isMeasured(h) ? (
+                    <label className="field field--inline">
+                      <span className="visually-hidden">
+                        {h.name}: số {unitLabel(h)}
+                      </span>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        step="any"
+                        disabled={skipped}
+                        defaultValue={entry?.status === 'done' ? (entry.value ?? 0) : ''}
+                        key={`${h.id}-${day}-${entry?.updatedAt ?? 0}`}
+                        onBlur={(e) =>
+                          appStore.update((s) =>
+                            logValue(s, h.id, day, today, Number(e.target.value) || 0),
+                          )
+                        }
+                      />
+                      <span className="muted small">
+                        /{planOn(h, day).target ?? h.target} {unitLabel(h)}
+                      </span>
+                    </label>
+                  ) : (
                     <label className="toggle">
                       <input
                         type="checkbox"
-                        checked={done}
+                        checked={outcome === 'done'}
+                        disabled={skipped}
                         onChange={() => appStore.update((s) => toggleCheckin(s, h.id, day, today))}
                       />
                       <span className="visually-hidden">{h.name} đã xong</span>
                     </label>
-                  ) : (
-                    <span className="muted small">{done ? 'Đã xong' : 'Chưa xong'}</span>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className={`chip chip--small ${skipped ? 'is-selected' : ''}`}
+                      aria-pressed={skipped}
+                      onClick={() =>
+                        appStore.update((s) => setSkipped(s, h.id, day, today, !skipped))
+                      }
+                    >
+                      Bỏ qua
+                    </button>
                   )}
                 </li>
               );

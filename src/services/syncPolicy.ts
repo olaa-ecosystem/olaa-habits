@@ -2,7 +2,7 @@
  * Pure rules for syncing progress between this device and the account (no Firebase imports,
  * so they are unit-tested on their own).
  */
-import { STATE_VERSION, type AppState } from '../stores/appState';
+import { migrateState, STATE_VERSION, type AppState } from '../stores/appState';
 
 export interface RemoteSnapshot {
   state: AppState;
@@ -45,22 +45,18 @@ export function toRemoteDoc(state: AppState, updatedAt: number): RemoteDoc {
   return { stateJson: JSON.stringify(state), updatedAt, schemaVersion: STATE_VERSION };
 }
 
-/** Parse a document from the account; anything unexpected is ignored rather than applied. */
+/**
+ * Parse a document from the account; older versions are migrated, anything unexpected or from a
+ * newer app version is ignored rather than applied.
+ */
 export function fromRemoteDoc(data: unknown): RemoteSnapshot | null {
   if (typeof data !== 'object' || data === null) return null;
   const { stateJson, updatedAt, schemaVersion } = data as Partial<RemoteDoc>;
-  if (schemaVersion !== STATE_VERSION) return null;
+  if (typeof schemaVersion !== 'number' || schemaVersion > STATE_VERSION) return null;
   if (typeof stateJson !== 'string' || typeof updatedAt !== 'number') return null;
   try {
-    const parsed: unknown = JSON.parse(stateJson);
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      (parsed as { version?: unknown }).version !== STATE_VERSION
-    ) {
-      return null;
-    }
-    return { state: parsed as AppState, updatedAt };
+    const state = migrateState(JSON.parse(stateJson));
+    return state ? { state, updatedAt } : null;
   } catch {
     return null;
   }

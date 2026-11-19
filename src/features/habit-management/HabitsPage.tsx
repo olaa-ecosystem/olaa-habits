@@ -2,11 +2,17 @@ import { routeHref } from '../../app/router';
 import { HabitBadge } from '../../components/HabitBadge';
 import { FlameIcon, PlusIcon } from '../../components/Icons';
 import { appStore, useAppState } from '../../stores/appStore';
-import { activeHabits, archivedHabits, restoreHabit } from '../../stores/appState';
+import {
+  activeHabits,
+  archivedHabits,
+  habitConsistency,
+  habitStreak,
+  restoreHabit,
+} from '../../stores/appState';
+import { CONSISTENCY_DAYS, formatRate } from '../streaks/consistency';
 import type { DayKey } from '../../utils/date';
-import { habitStreak } from '../habit-tracking/TodayPage';
 import { describeSchedule } from '../scheduling/schedule';
-import { describeSource } from './types';
+import { describeSource, describeTarget, isPausedNow } from './types';
 import { formatStreak } from '../streaks/streak';
 
 /** All habits, with archived ones kept below (module 02.01). */
@@ -33,6 +39,7 @@ export function HabitsPage({ today }: { today: DayKey }) {
         <ul className="habit-list">
           {active.map((habit) => {
             const streak = habitStreak(state, habit, today);
+            const consistency = habitConsistency(state, habit, today);
             return (
               <li key={habit.id}>
                 <a
@@ -47,9 +54,17 @@ export function HabitsPage({ today }: { today: DayKey }) {
                       {habit.source && (
                         <span className="auto-chip">{describeSource(habit.source)}</span>
                       )}
+                      {describeTarget(habit) && <span>Mục tiêu {describeTarget(habit)}</span>}
+                      {isPausedNow(habit) && <span className="note-chip">Đang tạm dừng</span>}
                       <span className="streak-chip">
                         <FlameIcon size={14} />
                         {formatStreak(streak)} · dài nhất {streak.best}
+                      </span>
+                      <span
+                        className="rate-chip"
+                        title={`${consistency.completed}/${consistency.opportunities} lần có lịch`}
+                      >
+                        Nhất quán {CONSISTENCY_DAYS} ngày: {formatRate(consistency)}
                       </span>
                     </span>
                   </span>

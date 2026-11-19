@@ -8,6 +8,7 @@ import type { DayKey } from '../../utils/date';
 import { AccountCard } from '../account/AccountCard';
 import { HABIT_TEMPLATES } from '../habit-management/templates';
 import { describeSchedule } from '../scheduling/schedule';
+import { describeTarget } from '../habit-management/types';
 
 /** First run: pick starter habits (learning first) or sign in to an existing account. */
 export function WelcomePage({ today }: { today: DayKey }) {
@@ -17,7 +18,16 @@ export function WelcomePage({ today }: { today: DayKey }) {
 
   const finish = () => {
     const drafts = HABIT_TEMPLATES.filter((t) => picked.includes(t.id)).map(
-      ({ name, icon, color, schedule, source }) => ({ name, icon, color, schedule, source }),
+      ({ name, icon, color, schedule, source, kind, target, unit }) => ({
+        name,
+        icon,
+        color,
+        schedule,
+        source,
+        kind,
+        target,
+        unit,
+      }),
     );
     appStore.update((s) => completeOnboarding(s, { name, drafts }, today));
   };
@@ -79,6 +89,7 @@ export function WelcomePage({ today }: { today: DayKey }) {
                     <span className="habit-row__name">{t.name}</span>
                     <span className="habit-row__meta">
                       {describeSchedule(t.schedule)}
+                      {describeTarget(t) && <span>· {describeTarget(t)}</span>}
                       {t.source && <span className="auto-chip">Tự động</span>}
                     </span>
                   </span>

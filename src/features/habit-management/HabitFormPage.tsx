@@ -2,13 +2,18 @@ import { useState, type FormEvent } from 'react';
 import { navigate } from '../../app/router';
 import { HabitBadge } from '../../components/HabitBadge';
 import { appStore, useAppState } from '../../stores/appStore';
-import { addHabit, archiveHabit, updateHabit } from '../../stores/appState';
+import { addHabit, archiveHabit, setPaused, updateHabit } from '../../stores/appState';
 import type { DayKey, Weekday } from '../../utils/date';
 import { MAX_TIMES_PER_WEEK, WEEKDAY_SHORT, type Schedule } from '../scheduling/schedule';
 import {
   HABIT_COLORS,
   HABIT_ICONS,
+  isPausedNow,
+  kindOf,
+  MAX_DESCRIPTION_LENGTH,
   MAX_NAME_LENGTH,
+  MAX_UNIT_LENGTH,
+  type HabitKind,
   MAX_NEW_LESSONS,
   describeSource,
   validateDraft,
@@ -27,6 +32,12 @@ const COLOR_NAMES: Record<HabitColor, string> = {
   pink: 'Hồng',
 };
 
+const KIND_LABELS: Record<HabitKind, string> = {
+  binary: 'Đánh dấu xong',
+  quantity: 'Số lượng',
+  duration: 'Thời lượng',
+};
+
 const EMPTY: HabitDraft = { name: '', icon: '📚', color: 'blue', schedule: { kind: 'daily' } };
 
 /** Create or edit a habit (REQ-02-001, REQ-02-002). */
@@ -41,9 +52,14 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
           color: existing.color,
           schedule: existing.schedule,
           source: existing.source ?? null,
+          kind: kindOf(existing),
+          target: existing.target,
+          unit: existing.unit,
+          description: existing.description,
         }
       : EMPTY,
   );
+  const [targetText, setTargetText] = useState(draft.target ? String(draft.target) : '');
   const [lessonCount, setLessonCount] = useState(
     draft.source?.kind === 'language.new_lessons' ? draft.source.count : 1,
   );
@@ -99,7 +115,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
       return;
     }
     appStore.update((s) =>
-      existing ? updateHabit(s, existing.id, draft) : addHabit(s, draft, today),
+      existing ? updateHabit(s, existing.id, draft, today) : addHabit(s, draft, today),
     );
     navigate({ name: existing ? 'habits' : 'today' });
   };
@@ -122,6 +138,72 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
             autoFocus={!existing}
           />
         </label>
+
+        <label className="field">
+          <span>Mô tả (không bắt buộc)</span>
+          <input
+            value={draft.description ?? ''}
+            maxLength={MAX_DESCRIPTION_LENGTH}
+            placeholder="Vì sao thói quen này quan trọng với bạn"
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+        </label>
+
+        {!draft.source && (
+          <fieldset>
+            <legend>Cách đo</legend>
+            {existing ? (
+              <p className="muted small">
+                {KIND_LABELS[kindOf(existing)]}. Không đổi được sau khi tạo, để giữ nguyên lịch sử.
+              </p>
+            ) : (
+              <div className="segmented" role="group">
+                {(Object.keys(KIND_LABELS) as HabitKind[]).map((k) => (
+                  <button
+                    key={k}
+                    type="button"
+                    className={kindOf(draft) === k ? 'is-selected' : ''}
+                    aria-pressed={kindOf(draft) === k}
+                    onClick={() => setDraft({ ...draft, kind: k })}
+                  >
+                    {KIND_LABELS[k]}
+                  </button>
+                ))}
+              </div>
+            )}
+            {kindOf(draft) !== 'binary' && (
+              <div className="row-options__line">
+                <label className="field field--inline">
+                  <span>Mục tiêu mỗi lần</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="any"
+                    value={targetText}
+                    onChange={(e) => {
+                      setTargetText(e.target.value);
+                      setDraft({ ...draft, target: Number(e.target.value) || undefined });
+                    }}
+                  />
+                </label>
+                {kindOf(draft) === 'quantity' ? (
+                  <label className="field field--inline">
+                    <span>Đơn vị</span>
+                    <input
+                      value={draft.unit ?? ''}
+                      maxLength={MAX_UNIT_LENGTH}
+                      placeholder="ly, trang, từ"
+                      onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
+                    />
+                  </label>
+                ) : (
+                  <span className="muted">phút</span>
+                )}
+              </div>
+            )}
+          </fieldset>
+        )}
 
         <fieldset>
           <legend>Biểu tượng</legend>
@@ -243,7 +325,11 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                   className={draft.source ? 'is-selected' : ''}
                   aria-pressed={Boolean(draft.source)}
                   onClick={() =>
-                    setDraft({ ...draft, source: draft.source ?? { kind: 'language.daily_goal' } })
+                    setDraft({
+                      ...draft,
+                      kind: 'binary',
+                      source: draft.source ?? { kind: 'language.daily_goal' },
+                    })
                   }
                 >
                   Tự động từ Olaa Language
@@ -319,6 +405,31 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
           </button>
         </div>
       </form>
+
+      {existing && (
+        <p className="muted small">
+          Đổi lịch lặp hoặc mục tiêu chỉ áp dụng từ hôm nay; những ngày trước vẫn được tính theo kế
+          hoạch cũ.
+        </p>
+      )}
+
+      {existing && !existing.archivedOn && (
+        <div className="card stack">
+          <p className="muted small">
+            Tạm dừng khi đi xa, ốm hoặc cần nghỉ. Ngày tạm dừng không tính vào tỷ lệ nhất quán và
+            không làm đứt chuỗi.
+          </p>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() =>
+              appStore.update((s) => setPaused(s, existing.id, !isPausedNow(existing), today))
+            }
+          >
+            {isPausedNow(existing) ? 'Tiếp tục thói quen' : 'Tạm dừng thói quen'}
+          </button>
+        </div>
+      )}
 
       {existing && (
         <div className="card stack">

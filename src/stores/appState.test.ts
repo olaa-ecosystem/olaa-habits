@@ -32,7 +32,7 @@ describe('habits', () => {
     s = toggleCheckin(s, 'a', today, today);
     s = archiveHabit(s, 'a', today);
     expect(activeHabits(s)).toHaveLength(0);
-    expect(s.checkins.a?.[today]).toBe(true);
+    expect(s.checkins.a?.[today]).toMatchObject({ status: 'done' });
     s = restoreHabit(s, 'a');
     expect(activeHabits(s)).toHaveLength(1);
   });
@@ -77,7 +77,10 @@ describe('freezes and badges', () => {
     let s = addHabit(initialState(), draft, '2026-11-09', 'a'); // a Monday
     for (let d = 9; d <= 16; d++) {
       const day = `2026-11-${String(d).padStart(2, '0')}`;
-      s = { ...s, checkins: { a: { ...(s.checkins.a ?? {}), [day]: true } } };
+      s = {
+        ...s,
+        checkins: { a: { ...(s.checkins.a ?? {}), [day]: { status: 'done', updatedAt: 0 } } },
+      };
     }
     s = awardBadges(s, '2026-11-17');
     expect(s.badges['first-checkin']).toBe('2026-11-17');

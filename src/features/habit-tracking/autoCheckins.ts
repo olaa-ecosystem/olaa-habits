@@ -1,4 +1,5 @@
 import type { AppState } from '../../stores/appState';
+import type { CheckIn } from './checkins';
 import type { DayKey } from '../../utils/date';
 
 /** Events read from Firestore `events/` (contracts/events/language-events.md). */
@@ -41,18 +42,35 @@ export function applyAutoCheckins(
     const source = habit.source;
     if (!source) continue;
     const last = habit.archivedOn ?? today;
-    const days: Record<DayKey, true> = {};
     const candidates =
       source.kind === 'language.daily_goal'
         ? [...goalDays]
         : [...lessonsByDay].filter(([, n]) => n >= source.count).map(([d]) => d);
-    for (const d of candidates) if (d >= habit.createdOn && d <= last) days[d] = true;
+    const wanted = new Set(candidates.filter((d) => d >= habit.createdOn && d <= last));
 
+    // Automatic entries follow the events; anything the user wrote (a skip, a note) stays.
     const current = state.checkins[habit.id] ?? {};
-    const same =
-      Object.keys(current).length === Object.keys(days).length &&
-      Object.keys(days).every((d) => current[d]);
-    if (!same) checkins = { ...checkins, [habit.id]: days };
+    const next: Record<DayKey, CheckIn> = {};
+    let changed = false;
+    for (const [d, entry] of Object.entries(current)) {
+      if (entry.source === 'language' && !wanted.has(d)) {
+        changed = true;
+        continue;
+      }
+      next[d] = entry;
+    }
+    for (const d of wanted) {
+      const entry = next[d];
+      if (entry?.source === 'language' && entry.status === 'done') continue;
+      next[d] = {
+        status: 'done',
+        source: 'language',
+        updatedAt: 0,
+        ...(entry?.note ? { note: entry.note } : {}),
+      };
+      changed = true;
+    }
+    if (changed) checkins = { ...checkins, [habit.id]: next };
   }
   return checkins === state.checkins ? state : { ...state, checkins };
 }
