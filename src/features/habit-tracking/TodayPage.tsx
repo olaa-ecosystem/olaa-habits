@@ -1,4 +1,6 @@
 import { navigate, routeHref } from '../../app/router';
+import { LANGUAGE_APP_URL } from '../../config';
+import { useAccount } from '../../services/cloudSync';
 import { HabitBadge } from '../../components/HabitBadge';
 import { CheckIcon, FlameIcon, PlusIcon, SnowIcon } from '../../components/Icons';
 import { appStore, useAppState } from '../../stores/appStore';
@@ -140,6 +142,7 @@ function TodayRow({ habit, state, today }: { habit: Habit; state: AppState; toda
         <span className="habit-row__name">{habit.name}</span>
         <span className="habit-row__meta">
           {meta}
+          {habit.source && <span className="auto-chip">Tự động</span>}
           {streak.current > 0 && (
             <span className="streak-chip">
               <FlameIcon size={14} />
@@ -148,15 +151,47 @@ function TodayRow({ habit, state, today }: { habit: Habit; state: AppState; toda
           )}
         </span>
       </span>
-      <button
-        type="button"
-        className={`check-btn habit-color--${habit.color}`}
-        aria-pressed={done}
-        aria-label={`${habit.name}: ${done ? 'đã xong, bấm để bỏ' : 'đánh dấu đã xong'}`}
-        onClick={() => appStore.update((s) => toggleCheckin(s, habit.id, today, today))}
+      {habit.source ? (
+        <AutoStatus habit={habit} done={done} />
+      ) : (
+        <button
+          type="button"
+          className={`check-btn habit-color--${habit.color}`}
+          aria-pressed={done}
+          aria-label={`${habit.name}: ${done ? 'đã xong, bấm để bỏ' : 'đánh dấu đã xong'}`}
+          onClick={() => appStore.update((s) => toggleCheckin(s, habit.id, today, today))}
+        >
+          <CheckIcon size={26} />
+        </button>
+      )}
+    </li>
+  );
+}
+
+/** Automatic habits are checked by Olaa Language events, not by hand (REQ-02-014). */
+function AutoStatus({ habit, done }: { habit: Habit; done: boolean }) {
+  const account = useAccount();
+  if (done) {
+    return (
+      <span
+        className={`check-btn is-auto habit-color--${habit.color}`}
+        role="img"
+        aria-label={`${habit.name}: đã xong, ghi nhận tự động`}
       >
         <CheckIcon size={26} />
-      </button>
-    </li>
+      </span>
+    );
+  }
+  if (account.status !== 'off' && account.email === null) {
+    return (
+      <a className="auto-link" href={routeHref({ name: 'me' })}>
+        Đăng nhập để tự ghi nhận
+      </a>
+    );
+  }
+  return (
+    <a className="auto-link" href={LANGUAGE_APP_URL} target="_blank" rel="noreferrer">
+      Học ngay
+    </a>
   );
 }

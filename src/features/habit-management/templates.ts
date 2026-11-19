@@ -4,10 +4,11 @@ import type { HabitDraft } from './types';
 export const HABIT_TEMPLATES: (HabitDraft & { id: string })[] = [
   {
     id: 'language',
-    name: 'Học ngoại ngữ 15 phút',
+    name: 'Đạt mục tiêu ngày ở Olaa Language',
     icon: '🗣️',
     color: 'blue',
     schedule: { kind: 'daily' },
+    source: { kind: 'language.daily_goal' },
   },
   {
     id: 'review',

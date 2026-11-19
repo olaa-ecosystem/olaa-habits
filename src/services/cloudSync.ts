@@ -42,6 +42,13 @@ let applyingRemote = false;
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let stopSnapshot: Unsubscribe | null = null;
 let started = false;
+const userListeners = new Set<(uid: string | null) => void>();
+
+/** Notified with the uid after sign-in (once the account copy is in place) and null on sign-out. */
+export function onUserChange(listener: (uid: string | null) => void): () => void {
+  userListeners.add(listener);
+  return () => userListeners.delete(listener);
+}
 
 function readMeta(): number {
   try {
@@ -140,6 +147,7 @@ async function handleSignedIn(fb: FirebaseServices, user: User): Promise<void> {
       () => setAccount({ status: 'error', error: 'Mất kết nối với tài khoản.' }),
     );
     setAccount({ status: 'synced' });
+    userListeners.forEach((l) => l(user.uid));
   } catch {
     if (currentUid === user.uid) {
       setAccount({
@@ -157,6 +165,7 @@ function handleSignedOut(): void {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = null;
   setAccount({ status: 'signed-out', email: null, error: null });
+  userListeners.forEach((l) => l(null));
 }
 
 /** Call once at startup. Does nothing when Firebase is not configured. */

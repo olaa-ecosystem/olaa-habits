@@ -9,6 +9,8 @@ import {
   HABIT_COLORS,
   HABIT_ICONS,
   MAX_NAME_LENGTH,
+  MAX_NEW_LESSONS,
+  describeSource,
   validateDraft,
   type HabitColor,
   type HabitDraft,
@@ -38,8 +40,12 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
           icon: existing.icon,
           color: existing.color,
           schedule: existing.schedule,
+          source: existing.source ?? null,
         }
       : EMPTY,
+  );
+  const [lessonCount, setLessonCount] = useState(
+    draft.source?.kind === 'language.new_lessons' ? draft.source.count : 1,
   );
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState<Weekday[]>(
@@ -211,6 +217,86 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                 +
               </button>
             </div>
+          )}
+        </fieldset>
+
+        <fieldset>
+          <legend>Cách ghi nhận</legend>
+          {existing ? (
+            <p className="muted small">
+              {draft.source ? describeSource(draft.source) : 'Tự đánh dấu'}. Không đổi được sau khi
+              tạo, để giữ nguyên lịch sử.
+            </p>
+          ) : (
+            <>
+              <div className="segmented segmented--two" role="group">
+                <button
+                  type="button"
+                  className={!draft.source ? 'is-selected' : ''}
+                  aria-pressed={!draft.source}
+                  onClick={() => setDraft({ ...draft, source: null })}
+                >
+                  Tự đánh dấu
+                </button>
+                <button
+                  type="button"
+                  className={draft.source ? 'is-selected' : ''}
+                  aria-pressed={Boolean(draft.source)}
+                  onClick={() =>
+                    setDraft({ ...draft, source: draft.source ?? { kind: 'language.daily_goal' } })
+                  }
+                >
+                  Tự động từ Olaa Language
+                </button>
+              </div>
+              {draft.source && (
+                <div className="stack">
+                  <label className="radio">
+                    <input
+                      type="radio"
+                      name="source"
+                      checked={draft.source.kind === 'language.daily_goal'}
+                      onChange={() =>
+                        setDraft({ ...draft, source: { kind: 'language.daily_goal' } })
+                      }
+                    />
+                    Đạt mục tiêu ngày
+                  </label>
+                  <label className="radio">
+                    <input
+                      type="radio"
+                      name="source"
+                      checked={draft.source.kind === 'language.new_lessons'}
+                      onChange={() =>
+                        setDraft({
+                          ...draft,
+                          source: { kind: 'language.new_lessons', count: lessonCount },
+                        })
+                      }
+                    />
+                    Hoàn thành
+                    <select
+                      className="number-input"
+                      value={lessonCount}
+                      aria-label="Số bài mới mỗi ngày"
+                      onChange={(e) => {
+                        const n = Number(e.target.value);
+                        setLessonCount(n);
+                        setDraft({ ...draft, source: { kind: 'language.new_lessons', count: n } });
+                      }}
+                    >
+                      {Array.from({ length: MAX_NEW_LESSONS }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                    bài mới trong ngày
+                  </label>
+                  <p className="muted small">Cần đăng nhập cùng một tài khoản Olaa ở cả hai app.</p>
+                </div>
+              )}
+            </>
           )}
         </fieldset>
 

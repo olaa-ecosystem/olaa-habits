@@ -17,7 +17,7 @@ export function WelcomePage({ today }: { today: DayKey }) {
 
   const finish = () => {
     const drafts = HABIT_TEMPLATES.filter((t) => picked.includes(t.id)).map(
-      ({ name, icon, color, schedule }) => ({ name, icon, color, schedule }),
+      ({ name, icon, color, schedule, source }) => ({ name, icon, color, schedule, source }),
     );
     appStore.update((s) => completeOnboarding(s, { name, drafts }, today));
   };
@@ -77,7 +77,10 @@ export function WelcomePage({ today }: { today: DayKey }) {
                   <HabitBadge habit={t} size={40} />
                   <span className="habit-row__text">
                     <span className="habit-row__name">{t.name}</span>
-                    <span className="habit-row__meta">{describeSchedule(t.schedule)}</span>
+                    <span className="habit-row__meta">
+                      {describeSchedule(t.schedule)}
+                      {t.source && <span className="auto-chip">Tự động</span>}
+                    </span>
                   </span>
                   <span className="template__check" aria-hidden>
                     {on && <CheckIcon size={18} />}

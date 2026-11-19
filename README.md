@@ -22,8 +22,11 @@ Implemented (PRD P0 + sign-in/sync):
 - **UI:** Vietnamese, phone / iPad / desktop layouts, keyboard and screen-reader labels,
   light and dark themes.
 
-Not yet: automatic check-ins from Olaa Language (needs the `events/` contract, PRD REQ-02-010
-to 015), reminders (REQ-02-022/023).
+- **Automatic habits:** "reach the daily goal" or "finish N new lessons" in Olaa Language,
+  checked from Firestore `events/` (contract `olaa-platform/contracts/events/language-events.md`).
+  Needs the same Olaa account in both apps.
+
+Not yet: speaking and flashcard signals (REQ-02-012/013), reminders (REQ-02-022/023).
 
 ## Project layout
 

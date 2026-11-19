@@ -30,7 +30,7 @@ describe('onboarding to first check-in', () => {
     const list = screen.getByRole('list', { name: /thói quen hôm nay/i });
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
 
-    const check = screen.getByRole('button', { name: /học ngoại ngữ 15 phút: đánh dấu/i });
+    const check = screen.getByRole('button', { name: /đọc sách 10 trang: đánh dấu/i });
     await user.click(check);
     expect(check).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('1 ngày')).toBeInTheDocument();
@@ -59,6 +59,30 @@ describe('habit form', () => {
     const habit = Object.values(appStore.getState().habits)[0];
     expect(habit?.name).toBe('Luyện nghe');
     expect(habit?.schedule).toEqual({ kind: 'weekdays', days: [1, 2, 3, 4] });
+  });
+});
+
+describe('automatic habit', () => {
+  it('creates a Language habit with no manual check button', async () => {
+    const user = userEvent.setup();
+    appStore.update((s) => ({ ...s, onboarded: true }));
+    render(<App />);
+    await go('#/habits/new');
+
+    await user.type(screen.getByLabelText(/tên thói quen/i), 'Học 2 bài mới');
+    await user.click(screen.getByRole('button', { name: /tự động từ olaa language/i }));
+    await user.click(screen.getByRole('radio', { name: /hoàn thành/i }));
+    await user.selectOptions(screen.getByRole('combobox', { name: /số bài mới/i }), '2');
+    await user.click(screen.getByRole('button', { name: /tạo thói quen/i }));
+
+    const habit = Object.values(appStore.getState().habits)[0];
+    expect(habit?.source).toEqual({ kind: 'language.new_lessons', count: 2 });
+    await go('#/today');
+    expect(screen.queryByRole('button', { name: /học 2 bài mới: đánh dấu/i })).toBeNull();
+    expect(screen.getByRole('link', { name: /học ngay/i })).toHaveAttribute(
+      'href',
+      'https://olaa-ecosystem.web.app',
+    );
   });
 });
 

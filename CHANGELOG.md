@@ -12,3 +12,5 @@ All notable changes will be recorded here. Until the first release, this reposit
   - Badges kept once earned.
   - Olaa ID sign-in and sync to Firestore `habits/{uid}` (platform ADR-0004).
   - Firebase Hosting config for site `olaa-habits`; GitHub Actions CI.
+- Automatic habits from Olaa Language (REQ-02-010/011/014/015): "reach the daily goal" or "finish N new lessons";
+  check-ins are recomputed from Firestore `events/`, no manual check button, "Học ngay" opens Language.

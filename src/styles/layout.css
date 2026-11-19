@@ -761,3 +761,63 @@ fieldset {
     font-size: 12px;
   }
 }
+
+/* ================= automatic habits ================= */
+.auto-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 800;
+}
+.check-btn.is-auto {
+  background: var(--habit);
+  color: #fff;
+  cursor: default;
+}
+.check-btn.is-auto svg {
+  opacity: 1;
+}
+.auto-link {
+  flex: none;
+  max-width: 110px;
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+.segmented--two {
+  grid-template-columns: repeat(2, 1fr);
+}
+.radio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.radio input[type='radio'] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+}
+.number-input {
+  width: 64px;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  text-align: center;
+}

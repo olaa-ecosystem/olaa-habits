@@ -6,6 +6,7 @@ import { activeHabits, archivedHabits, restoreHabit } from '../../stores/appStat
 import type { DayKey } from '../../utils/date';
 import { habitStreak } from '../habit-tracking/TodayPage';
 import { describeSchedule } from '../scheduling/schedule';
+import { describeSource } from './types';
 import { formatStreak } from '../streaks/streak';
 
 /** All habits, with archived ones kept below (module 02.01). */
@@ -43,6 +44,9 @@ export function HabitsPage({ today }: { today: DayKey }) {
                     <span className="habit-row__name">{habit.name}</span>
                     <span className="habit-row__meta">
                       {describeSchedule(habit.schedule)}
+                      {habit.source && (
+                        <span className="auto-chip">{describeSource(habit.source)}</span>
+                      )}
                       <span className="streak-chip">
                         <FlameIcon size={14} />
                         {formatStreak(streak)} · dài nhất {streak.best}

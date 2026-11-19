@@ -1,6 +1,12 @@
 import { addDays, type DayKey } from '../utils/date';
 import { detectBadges, type BadgeId } from '../features/gamification/badges';
-import { validateDraft, type Habit, type HabitDraft } from '../features/habit-management/types';
+import {
+  isAuto,
+  isValidSource,
+  validateDraft,
+  type Habit,
+  type HabitDraft,
+} from '../features/habit-management/types';
 import { isValidSchedule } from '../features/scheduling/schedule';
 import { canFreeze, canUnfreeze } from '../features/streaks/freeze';
 
@@ -40,8 +46,12 @@ export function newId(): string {
   return `h-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function isValidDraft(draft: HabitDraft): boolean {
+  return !validateDraft(draft) && isValidSchedule(draft.schedule) && isValidSource(draft.source);
+}
+
 function cleanDraft(draft: HabitDraft): HabitDraft {
-  return { ...draft, name: draft.name.trim() };
+  return { ...draft, name: draft.name.trim(), source: draft.source ?? null };
 }
 
 export function orderedHabits(state: AppState): Habit[] {
@@ -62,14 +72,14 @@ export function addHabit(
   today: DayKey,
   id = newId(),
 ): AppState {
-  if (validateDraft(draft) || !isValidSchedule(draft.schedule) || state.habits[id]) return state;
+  if (!isValidDraft(draft) || state.habits[id]) return state;
   const habit: Habit = { ...cleanDraft(draft), id, createdOn: today, archivedOn: null };
   return { ...state, habits: { ...state.habits, [id]: habit }, order: [...state.order, id] };
 }
 
 export function updateHabit(state: AppState, id: string, draft: HabitDraft): AppState {
   const habit = state.habits[id];
-  if (!habit || validateDraft(draft) || !isValidSchedule(draft.schedule)) return state;
+  if (!habit || !isValidDraft(draft)) return state;
   return { ...state, habits: { ...state.habits, [id]: { ...habit, ...cleanDraft(draft) } } };
 }
 
@@ -89,6 +99,7 @@ export function restoreHabit(state: AppState, id: string): AppState {
 export function canEditDay(habit: Habit, day: DayKey, today: DayKey): boolean {
   return (
     habit.archivedOn === null &&
+    !isAuto(habit) &&
     day <= today &&
     day >= addDays(today, -EDITABLE_DAYS) &&
     day >= habit.createdOn

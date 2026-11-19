@@ -45,7 +45,7 @@ describe('habits', () => {
     );
     expect(s.onboarded).toBe(true);
     expect(activeHabits(s).map((h) => h.name)).toEqual([
-      'Học ngoại ngữ 15 phút',
+      'Đạt mục tiêu ngày ở Olaa Language',
       'Ôn bài trên lớp',
     ]);
   });
