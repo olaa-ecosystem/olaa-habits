@@ -1,20 +1,30 @@
 import { useState } from 'react';
 import { appStore, useAppState } from '../../stores/appStore';
-import { activeHabits, orderedHabits } from '../../stores/appState';
+import {
+  activeHabits,
+  habitStreak,
+  orderedHabits,
+  overallConsistency,
+  outcomeOn,
+} from '../../stores/appState';
 import { firebaseEnabled } from '../../services/firebase';
 import type { DayKey } from '../../utils/date';
 import { AccountCard } from '../account/AccountCard';
 import { BADGES } from '../gamification/badges';
-import { habitStreak } from '../habit-tracking/TodayPage';
+import { CONSISTENCY_DAYS, formatRate } from '../streaks/consistency';
 
 /** Stats, badges, account and settings. */
 export function MePage({ today }: { today: DayKey }) {
   const state = useAppState();
   const [confirmReset, setConfirmReset] = useState(false);
-  const totalCheckins = Object.values(state.checkins).reduce(
-    (n, days) => n + Object.keys(days).length,
+  const totalCheckins = orderedHabits(state).reduce(
+    (n, h) =>
+      n +
+      Object.keys(state.checkins[h.id] ?? {}).filter((d) => outcomeOn(state, h, d) === 'done')
+        .length,
     0,
   );
+  const consistency = overallConsistency(state, today);
   const bestStreak = Math.max(
     0,
     ...orderedHabits(state).map((h) => habitStreak(state, h, h.archivedOn ?? today).best),
@@ -29,12 +39,15 @@ export function MePage({ today }: { today: DayKey }) {
 
       <div className="stat-tiles">
         <div className="card stat-tile">
-          <strong>{activeHabits(state).length}</strong>
-          <span>thói quen đang theo dõi</span>
+          <strong>{formatRate(consistency)}</strong>
+          <span>
+            nhất quán {CONSISTENCY_DAYS} ngày ({consistency.completed}/{consistency.opportunities}{' '}
+            lần có lịch)
+          </span>
         </div>
         <div className="card stat-tile">
           <strong>{totalCheckins}</strong>
-          <span>lượt hoàn thành</span>
+          <span>lượt hoàn thành · {activeHabits(state).length} thói quen</span>
         </div>
         <div className="card stat-tile">
           <strong>{bestStreak}</strong>

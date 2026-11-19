@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { navigate, routeHref } from '../../app/router';
 import { LANGUAGE_APP_URL } from '../../config';
 import { useAccount } from '../../services/cloudSync';
@@ -6,34 +7,49 @@ import { CheckIcon, FlameIcon, PlusIcon, SnowIcon } from '../../components/Icons
 import { appStore, useAppState } from '../../stores/appStore';
 import {
   activeHabits,
+  entryOf,
+  habitStreak,
   isDone,
+  logValue,
+  outcomeOn,
   setFreeze,
+  setNote,
+  setPaused,
+  setSkipped,
   toggleCheckin,
   type AppState,
 } from '../../stores/appState';
 import { formatDayLong, monthOf, type DayKey } from '../../utils/date';
-import type { Habit } from '../habit-management/types';
+import {
+  describeTarget,
+  isMeasured,
+  isPausedNow,
+  kindOf,
+  planOn,
+  unitLabel,
+  type Habit,
+} from '../habit-management/types';
 import { describeSchedule, isScheduledOn } from '../scheduling/schedule';
 import { canFreeze, freezesLeftIn, FREEZES_PER_MONTH } from '../streaks/freeze';
-import { computeStreak, formatStreak, weekProgress } from '../streaks/streak';
+import { formatStreak, weekProgress } from '../streaks/streak';
+import { MAX_NOTE_LENGTH } from './checkins';
 
-export function habitStreak(state: AppState, habit: Habit, today: DayKey) {
-  return computeStreak({
-    schedule: habit.schedule,
-    createdOn: habit.createdOn,
-    today,
-    done: (d) => isDone(state, habit.id, d),
-    frozen: (d) => Boolean(state.freezes[d]),
-  });
+/** One tap adds this much to a measured habit. */
+function stepOf(habit: Habit): number {
+  return kindOf(habit) === 'duration' ? 5 : 1;
 }
 
-/** Today's habits, one tap to check (REQ-02-003, NFR-02-001). */
+/** Today's habits, one tap to check (REQ-02-003, NFR-02-001; PRD v1.0 §7.2). */
 export function TodayPage({ today }: { today: DayKey }) {
   const state = useAppState();
+  const [openId, setOpenId] = useState<string | null>(null);
   const habits = activeHabits(state);
-  const dueToday = habits.filter((h) => isScheduledOn(h.schedule, today));
-  const notToday = habits.filter((h) => !isScheduledOn(h.schedule, today));
-  const doneCount = dueToday.filter((h) => isDone(state, h.id, today)).length;
+  const paused = habits.filter(isPausedNow);
+  const running = habits.filter((h) => !isPausedNow(h));
+  const dueToday = running.filter((h) => isScheduledOn(h.schedule, today));
+  const notToday = running.filter((h) => !isScheduledOn(h.schedule, today));
+  const counted = dueToday.filter((h) => outcomeOn(state, h, today) !== 'skipped');
+  const doneCount = counted.filter((h) => isDone(state, h.id, today)).length;
   const frozenToday = Boolean(state.freezes[today]);
   const freezesLeft = freezesLeftIn(state.freezes, monthOf(today));
 
@@ -44,9 +60,9 @@ export function TodayPage({ today }: { today: DayKey }) {
           <p className="eyebrow">{formatDayLong(today)}</p>
           <h1>{state.name ? `Chào ${state.name}!` : 'Hôm nay'}</h1>
         </div>
-        {dueToday.length > 0 && (
+        {counted.length > 0 && (
           <p className="today-count" aria-live="polite">
-            <strong>{doneCount}</strong>/{dueToday.length} xong
+            <strong>{doneCount}</strong>/{counted.length} xong
           </p>
         )}
       </header>
@@ -61,7 +77,14 @@ export function TodayPage({ today }: { today: DayKey }) {
       ) : (
         <ul className="habit-list" aria-label="Thói quen hôm nay">
           {dueToday.map((habit) => (
-            <TodayRow key={habit.id} habit={habit} state={state} today={today} />
+            <TodayRow
+              key={habit.id}
+              habit={habit}
+              state={state}
+              today={today}
+              open={openId === habit.id}
+              onToggleOpen={() => setOpenId(openId === habit.id ? null : habit.id)}
+            />
           ))}
         </ul>
       )}
@@ -81,12 +104,12 @@ export function TodayPage({ today }: { today: DayKey }) {
           </button>
         </div>
       ) : (
-        habits.length > 0 && (
+        running.length > 0 && (
           <div className="card freeze-card">
             <SnowIcon size={22} />
             <p>
-              <strong>Bận hôm nay?</strong> Đóng băng để giữ chuỗi. Còn {freezesLeft}/
-              {FREEZES_PER_MONTH} lượt tháng này.
+              <strong>Bận hôm nay?</strong> Đóng băng để giữ chuỗi của mọi thói quen. Còn{' '}
+              {freezesLeft}/{FREEZES_PER_MONTH} lượt tháng này.
             </p>
             <button
               type="button"
@@ -117,6 +140,31 @@ export function TodayPage({ today }: { today: DayKey }) {
         </section>
       )}
 
+      {paused.length > 0 && (
+        <section>
+          <h2 className="section-title">Đang tạm dừng</h2>
+          <p className="muted small">Ngày tạm dừng không tính vào tỷ lệ và không làm đứt chuỗi.</p>
+          <ul className="habit-list habit-list--quiet">
+            {paused.map((habit) => (
+              <li key={habit.id} className="habit-row">
+                <HabitBadge habit={habit} size={36} />
+                <span className="habit-row__text">
+                  <span className="habit-row__name">{habit.name}</span>
+                  <span className="habit-row__meta">{describeSchedule(habit.schedule)}</span>
+                </span>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={() => appStore.update((s) => setPaused(s, habit.id, false, today))}
+                >
+                  Tiếp tục
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {habits.length > 0 && (
         <button type="button" className="add-fab" onClick={() => navigate({ name: 'habit-new' })}>
           <PlusIcon />
@@ -127,44 +175,183 @@ export function TodayPage({ today }: { today: DayKey }) {
   );
 }
 
-function TodayRow({ habit, state, today }: { habit: Habit; state: AppState; today: DayKey }) {
-  const done = isDone(state, habit.id, today);
+function TodayRow({
+  habit,
+  state,
+  today,
+  open,
+  onToggleOpen,
+}: {
+  habit: Habit;
+  state: AppState;
+  today: DayKey;
+  open: boolean;
+  onToggleOpen: () => void;
+}) {
+  const outcome = outcomeOn(state, habit, today);
+  const entry = entryOf(state, habit.id, today);
   const streak = habitStreak(state, habit, today);
-  const meta =
-    habit.schedule.kind === 'perWeek'
-      ? `${weekProgress(today, habit.createdOn, (d) => isDone(state, habit.id, d))}/${habit.schedule.times} lần tuần này`
-      : describeSchedule(habit.schedule);
+  const measured = isMeasured(habit);
+  const target = planOn(habit, today).target ?? habit.target ?? 0;
+  const value = entry?.status === 'done' ? (entry.value ?? 0) : 0;
+
+  let meta: string;
+  if (outcome === 'skipped') meta = 'Đã bỏ qua hôm nay';
+  else if (measured) meta = `${value}/${target} ${unitLabel(habit)}`;
+  else if (habit.schedule.kind === 'perWeek')
+    meta = `${weekProgress(today, habit.createdOn, (d) => isDone(state, habit.id, d))}/${habit.schedule.times} lần tuần này`;
+  else meta = describeSchedule(habit.schedule);
 
   return (
-    <li className={`habit-row ${done ? 'is-done' : ''}`}>
-      <HabitBadge habit={habit} />
-      <span className="habit-row__text">
-        <span className="habit-row__name">{habit.name}</span>
-        <span className="habit-row__meta">
-          {meta}
-          {habit.source && <span className="auto-chip">Tự động</span>}
-          {streak.current > 0 && (
-            <span className="streak-chip">
-              <FlameIcon size={14} />
-              {formatStreak(streak)}
+    <li className={`habit-row habit-row--today is-${outcome} ${open ? 'is-open' : ''}`}>
+      <div className="habit-row__main">
+        <HabitBadge habit={habit} />
+        <span className="habit-row__text">
+          <span className="habit-row__name">{habit.name}</span>
+          <span className="habit-row__meta">
+            {meta}
+            {habit.source && <span className="auto-chip">Tự động</span>}
+            {streak.current > 0 && (
+              <span className="streak-chip">
+                <FlameIcon size={14} />
+                {formatStreak(streak)}
+              </span>
+            )}
+            {entry?.note && <span className="note-chip">Có ghi chú</span>}
+          </span>
+          {measured && outcome !== 'skipped' && (
+            <span
+              className={`meter habit-color--${habit.color}`}
+              role="progressbar"
+              aria-label={`${habit.name}: ${value} trên ${target} ${unitLabel(habit)}`}
+              aria-valuemin={0}
+              aria-valuemax={target}
+              aria-valuenow={value}
+            >
+              <span
+                style={{ width: `${Math.min(100, target > 0 ? (value / target) * 100 : 0)}%` }}
+              />
             </span>
           )}
         </span>
-      </span>
-      {habit.source ? (
-        <AutoStatus habit={habit} done={done} />
-      ) : (
+        {habit.source ? (
+          <AutoStatus habit={habit} done={outcome === 'done'} />
+        ) : measured ? (
+          <button
+            type="button"
+            className={`check-btn check-btn--add habit-color--${habit.color}`}
+            aria-pressed={outcome === 'done'}
+            aria-label={`${habit.name}: thêm ${stepOf(habit)} ${unitLabel(habit)}`}
+            onClick={() =>
+              appStore.update((s) => logValue(s, habit.id, today, today, value + stepOf(habit)))
+            }
+          >
+            {outcome === 'done' ? (
+              <CheckIcon size={26} />
+            ) : (
+              <span className="check-btn__plus">+{stepOf(habit)}</span>
+            )}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`check-btn habit-color--${habit.color}`}
+            aria-pressed={outcome === 'done'}
+            aria-label={`${habit.name}: ${outcome === 'done' ? 'đã xong, bấm để bỏ' : 'đánh dấu đã xong'}`}
+            onClick={() => appStore.update((s) => toggleCheckin(s, habit.id, today, today))}
+          >
+            <CheckIcon size={26} />
+          </button>
+        )}
         <button
           type="button"
-          className={`check-btn habit-color--${habit.color}`}
-          aria-pressed={done}
-          aria-label={`${habit.name}: ${done ? 'đã xong, bấm để bỏ' : 'đánh dấu đã xong'}`}
-          onClick={() => appStore.update((s) => toggleCheckin(s, habit.id, today, today))}
+          className="icon-btn more-btn"
+          aria-expanded={open}
+          aria-label={`Tuỳ chọn cho ${habit.name}`}
+          onClick={onToggleOpen}
         >
-          <CheckIcon size={26} />
+          ⋯
+        </button>
+      </div>
+      {open && <RowOptions habit={habit} state={state} today={today} />}
+    </li>
+  );
+}
+
+/** Log an amount, skip the day, add a note, or pause the habit. */
+function RowOptions({ habit, state, today }: { habit: Habit; state: AppState; today: DayKey }) {
+  const entry = entryOf(state, habit.id, today);
+  const skipped = entry?.status === 'skipped';
+  const [note, setNoteText] = useState(entry?.note ?? '');
+  const [amount, setAmount] = useState(String(entry?.status === 'done' ? (entry.value ?? '') : ''));
+  const target = describeTarget(habit);
+
+  return (
+    <div className="row-options">
+      {isMeasured(habit) && !habit.source && !skipped && (
+        <form
+          className="row-options__line"
+          onSubmit={(e) => {
+            e.preventDefault();
+            appStore.update((s) => logValue(s, habit.id, today, today, Number(amount) || 0));
+          }}
+        >
+          <label className="field field--inline">
+            <span>Hôm nay ({unitLabel(habit)})</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step="any"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </label>
+          <button type="submit" className="btn btn--ghost">
+            Lưu
+          </button>
+          {target && <span className="muted small">Mục tiêu {target}</span>}
+        </form>
+      )}
+      {!habit.source && (
+        <button
+          type="button"
+          className="btn btn--ghost"
+          onClick={() => appStore.update((s) => setSkipped(s, habit.id, today, today, !skipped))}
+        >
+          {skipped ? 'Bỏ "bỏ qua"' : 'Bỏ qua hôm nay'}
         </button>
       )}
-    </li>
+      {!habit.source && (
+        <form
+          className="row-options__line"
+          onSubmit={(e) => {
+            e.preventDefault();
+            appStore.update((s) => setNote(s, habit.id, today, today, note));
+          }}
+        >
+          <label className="field field--grow">
+            <span>Ghi chú hôm nay</span>
+            <input
+              value={note}
+              maxLength={MAX_NOTE_LENGTH}
+              placeholder="Ví dụ: mệt, học ít hơn"
+              onChange={(e) => setNoteText(e.target.value)}
+            />
+          </label>
+          <button type="submit" className="btn btn--ghost">
+            Lưu ghi chú
+          </button>
+        </form>
+      )}
+      <button
+        type="button"
+        className="link-btn link-btn--start"
+        onClick={() => appStore.update((s) => setPaused(s, habit.id, true, today))}
+      >
+        Tạm dừng thói quen này
+      </button>
+    </div>
   );
 }
 

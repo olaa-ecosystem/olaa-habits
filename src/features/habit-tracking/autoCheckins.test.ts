@@ -27,7 +27,8 @@ describe('applyAutoCheckins', () => {
       ],
       today,
     );
-    expect(next.checkins.g).toEqual({ '2026-11-18': true });
+    expect(Object.keys(next.checkins.g ?? {})).toEqual(['2026-11-18']);
+    expect(next.checkins.g?.['2026-11-18']).toMatchObject({ status: 'done', source: 'language' });
   });
 
   it('needs N new lessons on the same day', () => {
@@ -41,7 +42,7 @@ describe('applyAutoCheckins', () => {
       ],
       today,
     );
-    expect(next.checkins.l).toEqual({ '2026-11-19': true });
+    expect(Object.keys(next.checkins.l ?? {})).toEqual(['2026-11-19']);
   });
 
   it('returns the same state when nothing changes, and blocks manual toggles', () => {

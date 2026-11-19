@@ -9,7 +9,11 @@ MVP web app (pre-release). Same stack and layout as `olaa-language`.
 
 Implemented (PRD P0 + sign-in/sync):
 - **Habits:** create, edit, archive and restore; icon, colour, schedule (every day, chosen
-  weekdays, or N times a week). Starter habits during onboarding.
+  weekdays, or N times a week); done/not done, quantity or duration with a target. Starter
+  habits during onboarding.
+- **Humane tracking (PRD v1.0 §7.3):** skip a day, add a note, pause a habit; a schedule or
+  target change applies from today and never rewrites past days; 30-day consistency shown
+  next to streaks.
 - **Today:** habits due today, one tap to check off, done count, streak per habit.
 - **Streaks:** current and best streak. A frozen day keeps a streak without adding to it;
   "N times a week" habits count weeks.

@@ -821,3 +821,136 @@ fieldset {
   font-weight: 800;
   text-align: center;
 }
+
+/* ================= PRD v1.0: measured habits, options, consistency ================= */
+.habit-row--today {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+}
+.habit-row__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 12px 8px 12px 14px;
+}
+.habit-row--today.is-done {
+  border-color: var(--success);
+  background: var(--success-soft);
+}
+.habit-row--today.is-skipped {
+  border-style: dashed;
+  opacity: 0.8;
+}
+.habit-row--today.is-partial {
+  border-color: color-mix(in srgb, var(--success) 50%, var(--line));
+}
+.more-btn {
+  flex: none;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--ink-soft);
+}
+.check-btn--add svg {
+  opacity: 1;
+}
+.check-btn__plus {
+  font-weight: 900;
+  font-size: 16px;
+}
+.meter {
+  display: block;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--habit);
+  transition: width 0.25s ease-out;
+}
+.row-options {
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px 14px;
+  border-top: 2px dashed var(--line);
+}
+.row-options__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+.field--inline {
+  display: grid;
+  gap: 4px;
+}
+.field--inline input {
+  width: 110px;
+  min-height: 44px;
+}
+.field--grow {
+  flex: 1;
+  min-width: 180px;
+}
+.field--grow input {
+  width: 100%;
+  min-height: 44px;
+}
+.link-btn--start {
+  justify-self: start;
+  padding-left: 0;
+}
+.note-chip,
+.rate-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.note-chip {
+  background: var(--surface-2);
+  color: var(--ink-soft);
+}
+.rate-chip {
+  background: var(--success-soft);
+  color: var(--success-dark);
+}
+.day--skipped,
+.day-dot.day--skipped {
+  background: var(--surface);
+  color: var(--ink-soft);
+  box-shadow: inset 0 0 0 2px var(--line);
+  background-image: repeating-linear-gradient(135deg, transparent 0 5px, var(--line) 5px 6px);
+}
+.day-panel__item {
+  flex-wrap: wrap;
+}
+.day-panel__name {
+  display: grid;
+  flex: 1;
+  min-width: 120px;
+  font-weight: 700;
+}
+.day-panel__item .field--inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.day-panel__item .field--inline input {
+  width: 80px;
+}
+.chip--small {
+  min-width: 0;
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 13px;
+}
