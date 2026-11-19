@@ -1,0 +1,285 @@
+/**
+ * Olaa ID sign-in and habit sync (platform ADR-0004, Habits PRD REQ-02-030/031).
+ *
+ * Habits still live in localStorage first, so the app works offline and without an account.
+ * When signed in, every change is also written to Firestore at habits/{uid} (debounced), and
+ * changes made on another device are applied here. Conflicts: the most recent copy wins.
+ */
+import type { User } from 'firebase/auth';
+import type { Unsubscribe } from 'firebase/firestore';
+import { useSyncExternalStore } from 'react';
+import { appStore } from '../stores/appStore';
+import type { AppState } from '../stores/appState';
+import { firebaseEnabled, loadedFirebase, loadFirebase, type FirebaseServices } from './firebase';
+import { fromRemoteDoc, initialSyncAction, toRemoteDoc } from './syncPolicy';
+
+const META_KEY = 'olaa-habits/sync-meta';
+const PUSH_DELAY_MS = 1500;
+
+export type SyncStatus = 'off' | 'connecting' | 'signed-out' | 'syncing' | 'synced' | 'error';
+
+export interface AccountState {
+  status: SyncStatus;
+  email: string | null;
+  error: string | null;
+}
+
+let account: AccountState = {
+  status: firebaseEnabled ? 'connecting' : 'off',
+  email: null,
+  error: null,
+};
+const accountListeners = new Set<() => void>();
+
+function setAccount(patch: Partial<AccountState>): void {
+  account = { ...account, ...patch };
+  accountListeners.forEach((l) => l());
+}
+
+let localUpdatedAt = readMeta();
+let currentUid: string | null = null;
+let applyingRemote = false;
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+let stopSnapshot: Unsubscribe | null = null;
+let started = false;
+const userListeners = new Set<(uid: string | null) => void>();
+
+/** Notified with the uid after sign-in (once the account copy is in place) and null on sign-out. */
+export function onUserChange(listener: (uid: string | null) => void): () => void {
+  userListeners.add(listener);
+  return () => userListeners.delete(listener);
+}
+
+function readMeta(): number {
+  try {
+    const value = Number(window.localStorage.getItem(META_KEY));
+    return Number.isFinite(value) ? value : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeMeta(value: number): void {
+  localUpdatedAt = value;
+  try {
+    window.localStorage.setItem(META_KEY, String(value));
+  } catch {
+    // Without storage the timestamp lives in memory only; sync still works this session.
+  }
+}
+
+function userDoc(fb: FirebaseServices, uid: string) {
+  return fb.firestoreSdk.doc(fb.db, 'habits', uid);
+}
+
+async function push(): Promise<void> {
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
+  const uid = currentUid;
+  const fb = loadedFirebase();
+  if (!uid || !fb) return;
+  setAccount({ status: 'syncing' });
+  try {
+    await fb.firestoreSdk.setDoc(
+      userDoc(fb, uid),
+      toRemoteDoc(appStore.getState(), localUpdatedAt),
+    );
+    if (currentUid === uid) setAccount({ status: 'synced', error: null });
+  } catch {
+    if (currentUid === uid) {
+      setAccount({
+        status: 'error',
+        error: 'Chưa lưu được lên tài khoản. Dữ liệu vẫn an toàn trên máy này.',
+      });
+    }
+  }
+}
+
+function schedulePush(): void {
+  if (!currentUid) return;
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = setTimeout(() => void push(), PUSH_DELAY_MS);
+}
+
+async function flush(): Promise<void> {
+  if (pushTimer) await push();
+}
+
+function applyRemote(state: AppState, updatedAt: number): void {
+  applyingRemote = true;
+  try {
+    appStore.replace(state);
+  } finally {
+    applyingRemote = false;
+  }
+  writeMeta(updatedAt);
+}
+
+async function handleSignedIn(fb: FirebaseServices, user: User): Promise<void> {
+  const { getDoc, onSnapshot } = fb.firestoreSdk;
+  currentUid = user.uid;
+  setAccount({ status: 'syncing', email: user.email, error: null });
+  try {
+    const snap = await getDoc(userDoc(fb, user.uid));
+    const remote = snap.exists() ? fromRemoteDoc(snap.data()) : null;
+    if (snap.exists() && !remote) {
+      // Written by a newer app version: never overwrite it from here.
+      setAccount({
+        status: 'error',
+        error: 'Tài khoản được lưu bởi phiên bản app mới hơn. Tải lại trang để cập nhật.',
+      });
+      return;
+    }
+    const action = initialSyncAction(appStore.getState(), localUpdatedAt, remote);
+    if (action === 'pull' && remote) applyRemote(remote.state, remote.updatedAt);
+    if (action === 'push') await push();
+    if (currentUid !== user.uid) return;
+
+    stopSnapshot?.();
+    stopSnapshot = onSnapshot(
+      userDoc(fb, user.uid),
+      (s) => {
+        if (s.metadata.hasPendingWrites || !s.exists()) return;
+        const latest = fromRemoteDoc(s.data());
+        if (latest && latest.updatedAt > localUpdatedAt)
+          applyRemote(latest.state, latest.updatedAt);
+      },
+      () => setAccount({ status: 'error', error: 'Mất kết nối với tài khoản.' }),
+    );
+    setAccount({ status: 'synced' });
+    userListeners.forEach((l) => l(user.uid));
+  } catch {
+    if (currentUid === user.uid) {
+      setAccount({
+        status: 'error',
+        error: 'Không kết nối được tài khoản. Dữ liệu vẫn an toàn trên máy này.',
+      });
+    }
+  }
+}
+
+function handleSignedOut(): void {
+  currentUid = null;
+  stopSnapshot?.();
+  stopSnapshot = null;
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
+  setAccount({ status: 'signed-out', email: null, error: null });
+  userListeners.forEach((l) => l(null));
+}
+
+/** Call once at startup. Does nothing when Firebase is not configured. */
+export function startCloudSync(): void {
+  if (started || !firebaseEnabled) return;
+  started = true;
+
+  appStore.subscribe(() => {
+    if (applyingRemote) return;
+    writeMeta(Date.now());
+    schedulePush();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') void flush();
+  });
+  loadFirebase().then(
+    (fb) => {
+      if (!fb) return;
+      fb.authSdk.onAuthStateChanged(fb.auth, (user) => {
+        if (user) void handleSignedIn(fb, user);
+        else handleSignedOut();
+      });
+    },
+    () =>
+      setAccount({
+        status: 'error',
+        error: 'Không tải được phần đăng nhập. Kiểm tra mạng rồi tải lại trang.',
+      }),
+  );
+}
+
+function authErrorMessage(error: unknown): string | null {
+  const code = (error as { code?: unknown } | null)?.code;
+  switch (code) {
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return null;
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'Email hoặc mật khẩu không đúng.';
+    case 'auth/email-already-in-use':
+      return 'Email này đã có tài khoản. Hãy đăng nhập.';
+    case 'auth/weak-password':
+      return 'Mật khẩu cần ít nhất 6 ký tự.';
+    case 'auth/invalid-email':
+      return 'Địa chỉ email chưa đúng.';
+    case 'auth/popup-blocked':
+      return 'Trình duyệt đã chặn cửa sổ đăng nhập. Cho phép cửa sổ bật lên rồi thử lại.';
+    case 'auth/network-request-failed':
+      return 'Không có mạng. Kiểm tra kết nối rồi thử lại.';
+    case 'auth/operation-not-allowed':
+      return 'Cách đăng nhập này chưa được bật.';
+    case 'auth/unauthorized-domain':
+      return 'Địa chỉ web này chưa được phép đăng nhập.';
+    default:
+      return 'Đăng nhập không thành công. Thử lại nhé.';
+  }
+}
+
+/**
+ * Run an auth action and resolve to an error message, or null on success / user cancel.
+ * Uses the already-loaded SDK synchronously when possible so popups stay tied to the tap.
+ */
+function run(action: (fb: FirebaseServices) => Promise<unknown>): Promise<string | null> {
+  const attempt = (fb: FirebaseServices | null) =>
+    fb
+      ? action(fb).then(
+          () => null,
+          (error: unknown) => authErrorMessage(error),
+        )
+      : Promise.resolve('Chưa dùng được đăng nhập.');
+  const ready = loadedFirebase();
+  if (ready) return attempt(ready);
+  return loadFirebase().then(attempt, () => 'Không tải được phần đăng nhập. Kiểm tra mạng.');
+}
+
+export function signInWithGoogle(): Promise<string | null> {
+  return run((fb) => fb.authSdk.signInWithPopup(fb.auth, new fb.authSdk.GoogleAuthProvider()));
+}
+
+export function signInWithEmail(email: string, password: string): Promise<string | null> {
+  return run((fb) => fb.authSdk.signInWithEmailAndPassword(fb.auth, email.trim(), password));
+}
+
+export function createAccountWithEmail(email: string, password: string): Promise<string | null> {
+  return run((fb) => fb.authSdk.createUserWithEmailAndPassword(fb.auth, email.trim(), password));
+}
+
+/** Save pending changes, sign out, and clear this device (the account keeps the habits). */
+export async function signOutAndClear(): Promise<void> {
+  const fb = loadedFirebase();
+  if (!fb) return;
+  await flush();
+  await fb.authSdk.signOut(fb.auth);
+  handleSignedOut();
+  applyingRemote = true;
+  try {
+    appStore.reset();
+  } finally {
+    applyingRemote = false;
+  }
+  writeMeta(0);
+}
+
+function subscribeAccount(listener: () => void): () => void {
+  accountListeners.add(listener);
+  return () => accountListeners.delete(listener);
+}
+
+export function useAccount(): AccountState {
+  return useSyncExternalStore(
+    subscribeAccount,
+    () => account,
+    () => account,
+  );
+}
