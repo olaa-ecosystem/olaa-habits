@@ -20,7 +20,7 @@ import {
   weekStartOf,
   type DayKey,
 } from '../../utils/date';
-import { WEEKDAY_SHORT } from '../scheduling/schedule';
+import { isScheduledOn, WEEKDAY_SHORT } from '../scheduling/schedule';
 import { canFreeze, canUnfreeze, freezesLeftIn } from '../streaks/freeze';
 import { dayStatus, type DayStatus } from './calendarDay';
 
@@ -148,7 +148,9 @@ export function CalendarPage({ today }: { today: DayKey }) {
 
   // A render helper, not a component: it reads this page's state and must not remount on update.
   function renderDayPanel(day: DayKey) {
-    const habits = activeHabits(state).filter((h) => h.createdOn <= day);
+    const habits = activeHabits(state).filter(
+      (h) => h.createdOn <= day && isScheduledOn(h.schedule, day),
+    );
     const editable = habits.filter((h) => canEditDay(h, day, today));
     const frozen = Boolean(state.freezes[day]);
     const freezeCheck = canFreeze(state.freezes, day, today);
@@ -158,7 +160,7 @@ export function CalendarPage({ today }: { today: DayKey }) {
         {day <= today && (
           <ul className="day-panel__list">
             {habits.length === 0 && (
-              <li className="muted small">Chưa có thói quen vào ngày này.</li>
+              <li className="muted small">Không có thói quen nào có lịch vào ngày này.</li>
             )}
             {habits.map((h) => {
               const done = isDone(state, h.id, day);

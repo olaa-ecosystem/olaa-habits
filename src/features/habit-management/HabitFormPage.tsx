@@ -224,7 +224,11 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
           <button type="submit" className="btn">
             {existing ? 'Lưu' : 'Tạo thói quen'}
           </button>
-          <button type="button" className="btn btn--ghost" onClick={() => window.history.back()}>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => navigate({ name: existing ? 'habits' : 'today' })}
+          >
             Huỷ
           </button>
         </div>
