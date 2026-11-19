@@ -247,6 +247,21 @@ export function signInWithGoogle(): Promise<string | null> {
   return run((fb) => fb.authSdk.signInWithPopup(fb.auth, new fb.authSdk.GoogleAuthProvider()));
 }
 
+/**
+ * Gửi email đặt lại mật khẩu. Trả về null khi đã gửi. Email chưa có tài khoản cũng nhận cùng
+ * thông báo, để form không tiết lộ email nào đã đăng ký.
+ */
+export function sendPasswordReset(email: string): Promise<string | null> {
+  return run(async (fb) => {
+    fb.auth.languageCode = 'vi';
+    try {
+      await fb.authSdk.sendPasswordResetEmail(fb.auth, email.trim());
+    } catch (error) {
+      if ((error as { code?: string }).code !== 'auth/user-not-found') throw error;
+    }
+  });
+}
+
 export function signInWithEmail(email: string, password: string): Promise<string | null> {
   return run((fb) => fb.authSdk.signInWithEmailAndPassword(fb.auth, email.trim(), password));
 }

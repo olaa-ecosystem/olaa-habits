@@ -10,6 +10,8 @@ import {
 import { firebaseEnabled } from '../../services/firebase';
 import type { DayKey } from '../../utils/date';
 import { AccountCard } from '../account/AccountCard';
+import { downloadExport } from '../data-export/exportData';
+import { useAccount } from '../../services/cloudSync';
 import { BADGES } from '../gamification/badges';
 import { CONSISTENCY_DAYS, formatRate } from '../streaks/consistency';
 
@@ -17,6 +19,7 @@ import { CONSISTENCY_DAYS, formatRate } from '../streaks/consistency';
 export function MePage({ today }: { today: DayKey }) {
   const state = useAppState();
   const [confirmReset, setConfirmReset] = useState(false);
+  const account = useAccount();
   const totalCheckins = orderedHabits(state).reduce(
     (n, h) =>
       n +
@@ -113,6 +116,18 @@ export function MePage({ today }: { today: DayKey }) {
             Xoá toàn bộ dữ liệu
           </button>
         )}
+        <div className="stack">
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => downloadExport(appStore.getState(), account.email)}
+          >
+            Tải dữ liệu của tôi (JSON)
+          </button>
+          <p className="muted small">
+            Mọi thứ app lưu về bạn: thói quen, lịch sử điểm danh, ghi chú và cài đặt.
+          </p>
+        </div>
         {!firebaseEnabled && <p className="muted small">Dữ liệu chỉ lưu trên trình duyệt này.</p>}
       </div>
     </div>
