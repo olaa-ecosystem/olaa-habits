@@ -81,7 +81,7 @@ describe('automatic habit', () => {
     expect(screen.queryByRole('button', { name: /học 2 bài mới: đánh dấu/i })).toBeNull();
     expect(screen.getByRole('link', { name: /học ngay/i })).toHaveAttribute(
       'href',
-      'https://olaa-ecosystem.web.app',
+      'https://olaa-language.web.app',
     );
   });
 });
