@@ -11,9 +11,16 @@ export interface LanguageEvent {
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Keep only well-formed events; anything else is ignored rather than trusted. */
+/** Newest event envelope this app understands (contracts/events/language-events.md). */
+export const SUPPORTED_EVENT_VERSION = 1;
+
 export function parseEvent(data: unknown): LanguageEvent | null {
   if (typeof data !== 'object' || data === null) return null;
-  const { type, date } = data as { type?: unknown; date?: unknown };
+  const { type, date, version } = data as { type?: unknown; date?: unknown; version?: unknown };
+  // Events from before envelope v1 have no version and are read as v1. Newer versions may
+  // change meaning, so they are skipped until this app is updated.
+  if (version !== undefined && (typeof version !== 'number' || version > SUPPORTED_EVENT_VERSION))
+    return null;
   if (type !== 'language.daily_goal.completed' && type !== 'language.lesson.completed') return null;
   if (typeof date !== 'string' || !DAY.test(date)) return null;
   return { type, date };

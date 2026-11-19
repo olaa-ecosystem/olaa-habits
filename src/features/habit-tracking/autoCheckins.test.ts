@@ -57,6 +57,11 @@ describe('applyAutoCheckins', () => {
 
   it('ignores malformed events', () => {
     expect(parseEvent({ type: 'other', date: today })).toBeNull();
+    expect(
+      parseEvent({ id: 'u_x', version: 1, type: 'language.lesson.completed', date: today }),
+    ).toEqual(ev('language.lesson.completed', today));
+    expect(parseEvent({ version: 2, type: 'language.lesson.completed', date: today })).toBeNull();
+    expect(parseEvent({ version: '1', type: 'language.lesson.completed', date: today })).toBeNull();
     expect(parseEvent({ type: 'language.lesson.completed', date: 'yesterday' })).toBeNull();
     expect(parseEvent({ type: 'language.lesson.completed', date: today, extra: 1 })).toEqual(
       ev('language.lesson.completed', today),
