@@ -57,7 +57,7 @@ export function MePage({ today }: { today: DayKey }) {
           <span>
             {tr(
               `lượt hoàn thành · ${activeHabits(state).length} thói quen`,
-              `check-ins · ${activeHabits(state).length} habits`,
+              `check-ins · ${activeHabits(state).length} habit${activeHabits(state).length === 1 ? '' : 's'}`,
             )}
           </span>
         </div>
