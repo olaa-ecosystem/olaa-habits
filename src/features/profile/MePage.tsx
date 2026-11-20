@@ -10,10 +10,12 @@ import {
 import { firebaseEnabled } from '../../services/firebase';
 import type { DayKey } from '../../utils/date';
 import { AccountCard } from '../account/AccountCard';
+import { LocalePicker } from '../../i18n/LocalePicker';
 import { downloadExport } from '../data-export/exportData';
 import { useAccount } from '../../services/cloudSync';
 import { BADGES } from '../gamification/badges';
 import { CONSISTENCY_DAYS, formatRate } from '../streaks/consistency';
+import { tr } from '../../i18n/locale';
 
 /** Stats, badges, account and settings. */
 export function MePage({ today }: { today: DayKey }) {
@@ -37,29 +39,36 @@ export function MePage({ today }: { today: DayKey }) {
   return (
     <div className="page">
       <header className="page__head">
-        <h1>{state.name || 'Tôi'}</h1>
+        <h1>{state.name || tr('Tôi', 'Me')}</h1>
       </header>
 
       <div className="stat-tiles">
         <div className="card stat-tile">
           <strong>{formatRate(consistency)}</strong>
           <span>
-            nhất quán {CONSISTENCY_DAYS} ngày ({consistency.completed}/{consistency.opportunities}{' '}
-            lần có lịch)
+            {tr(
+              `nhất quán ${CONSISTENCY_DAYS} ngày (${consistency.completed}/${consistency.opportunities} lần có lịch)`,
+              `${CONSISTENCY_DAYS}-day consistency (${consistency.completed} of ${consistency.opportunities} scheduled)`,
+            )}
           </span>
         </div>
         <div className="card stat-tile">
           <strong>{totalCheckins}</strong>
-          <span>lượt hoàn thành · {activeHabits(state).length} thói quen</span>
+          <span>
+            {tr(
+              `lượt hoàn thành · ${activeHabits(state).length} thói quen`,
+              `check-ins · ${activeHabits(state).length} habits`,
+            )}
+          </span>
         </div>
         <div className="card stat-tile">
           <strong>{bestStreak}</strong>
-          <span>chuỗi dài nhất</span>
+          <span>{tr('chuỗi dài nhất', 'best streak')}</span>
         </div>
       </div>
 
       <h2 className="section-title">
-        Huy hiệu{' '}
+        {tr('Huy hiệu', 'Badges')}{' '}
         <span className="muted">
           ({earned}/{BADGES.length})
         </span>
@@ -75,7 +84,12 @@ export function MePage({ today }: { today: DayKey }) {
               <strong>{badge.title}</strong>
               <span className="small muted">{badge.description}</span>
               <span className="small">
-                {on ? `Đạt ngày ${on.split('-').reverse().join('/')}` : 'Chưa đạt'}
+                {on
+                  ? tr(
+                      `Đạt ngày ${on.split('-').reverse().join('/')}`,
+                      `Earned ${on.split('-').reverse().join('/')}`,
+                    )
+                  : tr('Chưa đạt', 'Not yet')}
               </span>
             </li>
           );
@@ -84,26 +98,39 @@ export function MePage({ today }: { today: DayKey }) {
 
       {firebaseEnabled && (
         <>
-          <h2 className="section-title">Tài khoản</h2>
+          <h2 className="section-title">{tr('Tài khoản', 'Account')}</h2>
           <AccountCard />
         </>
       )}
 
-      <h2 className="section-title">Cài đặt</h2>
+      <h2 className="section-title">{tr('Cài đặt', 'Settings')}</h2>
       <div className="card stack">
+        <fieldset>
+          <legend>{tr('Ngôn ngữ giao diện', 'App language')}</legend>
+          <LocalePicker />
+        </fieldset>
         {confirmReset ? (
-          <div className="stack" role="alertdialog" aria-label="Xác nhận xoá dữ liệu">
-            <p>Xoá mọi thói quen và lịch sử trên máy này? Không thể hoàn tác.</p>
+          <div
+            className="stack"
+            role="alertdialog"
+            aria-label={tr('Xác nhận xoá dữ liệu', 'Confirm deleting data')}
+          >
+            <p>
+              {tr(
+                'Xoá mọi thói quen và lịch sử trên máy này? Không thể hoàn tác.',
+                'Delete every habit and its history on this device? This can’t be undone.',
+              )}
+            </p>
             <div className="form-actions">
               <button type="button" className="btn btn--danger" onClick={() => appStore.reset()}>
-                Xoá hết
+                {tr('Xoá hết', 'Delete all')}
               </button>
               <button
                 type="button"
                 className="btn btn--ghost"
                 onClick={() => setConfirmReset(false)}
               >
-                Huỷ
+                {tr('Huỷ', 'Cancel')}
               </button>
             </div>
           </div>
@@ -113,7 +140,7 @@ export function MePage({ today }: { today: DayKey }) {
             className="link-btn link-btn--danger"
             onClick={() => setConfirmReset(true)}
           >
-            Xoá toàn bộ dữ liệu
+            {tr('Xoá toàn bộ dữ liệu', 'Delete all data')}
           </button>
         )}
         <div className="stack">
@@ -122,13 +149,20 @@ export function MePage({ today }: { today: DayKey }) {
             className="btn btn--ghost"
             onClick={() => downloadExport(appStore.getState(), account.email)}
           >
-            Tải dữ liệu của tôi (JSON)
+            {tr('Tải dữ liệu của tôi (JSON)', 'Download my data (JSON)')}
           </button>
           <p className="muted small">
-            Mọi thứ app lưu về bạn: thói quen, lịch sử điểm danh, ghi chú và cài đặt.
+            {tr(
+              'Mọi thứ app lưu về bạn: thói quen, lịch sử điểm danh, ghi chú và cài đặt.',
+              'Everything this app stores about you: habits, check-in history, notes and settings.',
+            )}
           </p>
         </div>
-        {!firebaseEnabled && <p className="muted small">Dữ liệu chỉ lưu trên trình duyệt này.</p>}
+        {!firebaseEnabled && (
+          <p className="muted small">
+            {tr('Dữ liệu chỉ lưu trên trình duyệt này.', 'Data is saved in this browser only.')}
+          </p>
+        )}
       </div>
     </div>
   );

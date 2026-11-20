@@ -1,10 +1,13 @@
 import type { HabitDraft } from './types';
+import { tr } from '../../i18n/locale';
 
 /** Starter habits offered during onboarding. Learning comes first (PRD 02, section 4). */
 export const HABIT_TEMPLATES: (HabitDraft & { id: string })[] = [
   {
     id: 'language',
-    name: 'Đạt mục tiêu ngày ở Olaa Language',
+    get name() {
+      return tr('Đạt mục tiêu ngày ở Olaa Language', 'Reach the daily goal in Olaa Language');
+    },
     icon: '🗣️',
     color: 'blue',
     schedule: { kind: 'daily' },
@@ -12,37 +15,57 @@ export const HABIT_TEMPLATES: (HabitDraft & { id: string })[] = [
   },
   {
     id: 'review',
-    name: 'Ôn bài trên lớp',
+    get name() {
+      return tr('Ôn bài trên lớp', 'Review class notes');
+    },
     icon: '📚',
     color: 'purple',
     schedule: { kind: 'weekdays', days: [0, 1, 2, 3, 4] },
   },
   {
     id: 'reading',
-    name: 'Đọc sách',
+    get name() {
+      return tr('Đọc sách', 'Read');
+    },
     icon: '📖',
     color: 'orange',
     schedule: { kind: 'daily' },
     kind: 'quantity',
     target: 10,
-    unit: 'trang',
+    get unit() {
+      return tr('trang', 'pages');
+    },
   },
   {
     id: 'exercise',
-    name: 'Tập thể dục',
+    get name() {
+      return tr('Tập thể dục', 'Exercise');
+    },
     icon: '🏃',
     color: 'green',
     schedule: { kind: 'perWeek', times: 3 },
   },
   {
     id: 'water',
-    name: 'Uống nước',
+    get name() {
+      return tr('Uống nước', 'Drink water');
+    },
     icon: '💧',
     color: 'teal',
     schedule: { kind: 'daily' },
     kind: 'quantity',
     target: 6,
-    unit: 'ly',
+    get unit() {
+      return tr('ly', 'glasses');
+    },
   },
-  { id: 'sleep', name: 'Ngủ trước 23 giờ', icon: '😴', color: 'pink', schedule: { kind: 'daily' } },
+  {
+    id: 'sleep',
+    get name() {
+      return tr('Ngủ trước 23 giờ', 'Sleep before 11 pm');
+    },
+    icon: '😴',
+    color: 'pink',
+    schedule: { kind: 'daily' },
+  },
 ];

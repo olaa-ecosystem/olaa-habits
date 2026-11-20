@@ -1,3 +1,4 @@
+import { tr } from '../i18n/locale';
 /** Local calendar day key, e.g. "2026-11-19". Streaks follow the learner's local day. */
 export type DayKey = string;
 
@@ -47,16 +48,27 @@ export function daysBetween(from: DayKey, to: DayKey): DayKey[] {
   return out;
 }
 
-const WEEKDAY_LONG = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
+const weekdayLong = () =>
+  tr(
+    'Thứ Hai|Thứ Ba|Thứ Tư|Thứ Năm|Thứ Sáu|Thứ Bảy|Chủ Nhật',
+    'Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday',
+  ).split('|');
+const MONTHS_EN =
+  'January|February|March|April|May|June|July|August|September|October|November|December'.split(
+    '|',
+  );
 
 /** "Thứ Năm, 19 tháng 11" */
 export function formatDayLong(key: DayKey): string {
   const date = fromDayKey(key);
-  return `${WEEKDAY_LONG[weekdayOf(key)]}, ${date.getDate()} tháng ${date.getMonth() + 1}`;
+  return tr(
+    `${weekdayLong()[weekdayOf(key)]}, ${date.getDate()} tháng ${date.getMonth() + 1}`,
+    `${weekdayLong()[weekdayOf(key)]}, ${MONTHS_EN[date.getMonth()]} ${date.getDate()}`,
+  );
 }
 
 /** "Tháng 11, 2026" */
 export function formatMonth(month: string): string {
   const [y, m] = month.split('-');
-  return `Tháng ${Number(m)}, ${y}`;
+  return tr(`Tháng ${Number(m)}, ${y}`, `${MONTHS_EN[Number(m) - 1]} ${y}`);
 }

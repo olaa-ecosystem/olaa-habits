@@ -4,7 +4,7 @@ import { HabitBadge } from '../../components/HabitBadge';
 import { appStore, useAppState } from '../../stores/appStore';
 import { addHabit, archiveHabit, setPaused, updateHabit } from '../../stores/appState';
 import type { DayKey, Weekday } from '../../utils/date';
-import { MAX_TIMES_PER_WEEK, WEEKDAY_SHORT, type Schedule } from '../scheduling/schedule';
+import { MAX_TIMES_PER_WEEK, weekdayShort, type Schedule } from '../scheduling/schedule';
 import {
   HABIT_COLORS,
   HABIT_ICONS,
@@ -20,23 +20,27 @@ import {
   type HabitColor,
   type HabitDraft,
 } from './types';
+import { tr } from '../../i18n/locale';
 
-const COLOR_NAMES: Record<HabitColor, string> = {
-  blue: 'Xanh dương',
-  orange: 'Cam',
-  green: 'Xanh lá',
-  red: 'Đỏ',
-  gold: 'Vàng',
-  purple: 'Tím',
-  teal: 'Xanh ngọc',
-  pink: 'Hồng',
-};
+const colorName = (c: HabitColor): string =>
+  ({
+    blue: tr('Xanh dương', 'Blue'),
+    orange: tr('Cam', 'Orange'),
+    green: tr('Xanh lá', 'Green'),
+    red: tr('Đỏ', 'Red'),
+    gold: tr('Vàng', 'Yellow'),
+    purple: tr('Tím', 'Purple'),
+    teal: tr('Xanh ngọc', 'Teal'),
+    pink: tr('Hồng', 'Pink'),
+  })[c];
 
-const KIND_LABELS: Record<HabitKind, string> = {
-  binary: 'Đánh dấu xong',
-  quantity: 'Số lượng',
-  duration: 'Thời lượng',
-};
+const KINDS: HabitKind[] = ['binary', 'quantity', 'duration'];
+const kindLabel = (k: HabitKind): string =>
+  ({
+    binary: tr('Đánh dấu xong', 'Done / not done'),
+    quantity: tr('Số lượng', 'Amount'),
+    duration: tr('Thời lượng', 'Time'),
+  })[k];
 
 const EMPTY: HabitDraft = { name: '', icon: '📚', color: 'blue', schedule: { kind: 'daily' } };
 
@@ -73,9 +77,9 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
     return (
       <div className="page">
         <div className="card empty">
-          <p>Không tìm thấy thói quen này.</p>
+          <p>{tr('Không tìm thấy thói quen này.', 'This habit was not found.')}</p>
           <button type="button" className="btn" onClick={() => navigate({ name: 'habits' })}>
-            Về danh sách
+            {tr('Về danh sách', 'Back to habits')}
           </button>
         </div>
       </div>
@@ -108,7 +112,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
     const problem =
       validateDraft(draft) ??
       (draft.schedule.kind === 'weekdays' && draft.schedule.days.length === 0
-        ? 'Chọn ít nhất một ngày trong tuần.'
+        ? tr('Chọn ít nhất một ngày trong tuần.', 'Pick at least one day of the week.')
         : null);
     if (problem) {
       setError(problem);
@@ -123,42 +127,49 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
   return (
     <div className="page">
       <header className="page__head">
-        <h1>{existing ? 'Sửa thói quen' : 'Thói quen mới'}</h1>
+        <h1>{existing ? tr('Sửa thói quen', 'Edit habit') : tr('Thói quen mới', 'New habit')}</h1>
         <HabitBadge habit={draft} size={52} />
       </header>
 
       <form className="card stack habit-form" onSubmit={onSubmit} noValidate>
         <label className="field">
-          <span>Tên thói quen</span>
+          <span>{tr('Tên thói quen', 'Habit name')}</span>
           <input
             value={draft.name}
             maxLength={MAX_NAME_LENGTH}
-            placeholder="Ví dụ: Học từ vựng 10 phút"
+            placeholder={tr('Ví dụ: Học từ vựng 10 phút', 'e.g. Learn vocabulary for 10 minutes')}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             autoFocus={!existing}
           />
         </label>
 
         <label className="field">
-          <span>Mô tả (không bắt buộc)</span>
+          <span>{tr('Mô tả (không bắt buộc)', 'Description (optional)')}</span>
           <input
             value={draft.description ?? ''}
             maxLength={MAX_DESCRIPTION_LENGTH}
-            placeholder="Vì sao thói quen này quan trọng với bạn"
+            placeholder={tr(
+              'Vì sao thói quen này quan trọng với bạn',
+              'Why this habit matters to you',
+            )}
             onChange={(e) => setDraft({ ...draft, description: e.target.value })}
           />
         </label>
 
         {!draft.source && (
           <fieldset>
-            <legend>Cách đo</legend>
+            <legend>{tr('Cách đo', 'How to measure')}</legend>
             {existing ? (
               <p className="muted small">
-                {KIND_LABELS[kindOf(existing)]}. Không đổi được sau khi tạo, để giữ nguyên lịch sử.
+                {kindLabel(kindOf(existing))}.{' '}
+                {tr(
+                  'Không đổi được sau khi tạo, để giữ nguyên lịch sử.',
+                  'This can’t change after creation, so your history stays intact.',
+                )}
               </p>
             ) : (
               <div className="segmented" role="group">
-                {(Object.keys(KIND_LABELS) as HabitKind[]).map((k) => (
+                {KINDS.map((k) => (
                   <button
                     key={k}
                     type="button"
@@ -166,7 +177,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                     aria-pressed={kindOf(draft) === k}
                     onClick={() => setDraft({ ...draft, kind: k })}
                   >
-                    {KIND_LABELS[k]}
+                    {kindLabel(k)}
                   </button>
                 ))}
               </div>
@@ -174,7 +185,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
             {kindOf(draft) !== 'binary' && (
               <div className="row-options__line">
                 <label className="field field--inline">
-                  <span>Mục tiêu mỗi lần</span>
+                  <span>{tr('Mục tiêu mỗi lần', 'Target each time')}</span>
                   <input
                     type="number"
                     inputMode="decimal"
@@ -189,16 +200,16 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                 </label>
                 {kindOf(draft) === 'quantity' ? (
                   <label className="field field--inline">
-                    <span>Đơn vị</span>
+                    <span>{tr('Đơn vị', 'Unit')}</span>
                     <input
                       value={draft.unit ?? ''}
                       maxLength={MAX_UNIT_LENGTH}
-                      placeholder="ly, trang, từ"
+                      placeholder={tr('ly, trang, từ', 'glasses, pages, words')}
                       onChange={(e) => setDraft({ ...draft, unit: e.target.value })}
                     />
                   </label>
                 ) : (
-                  <span className="muted">phút</span>
+                  <span className="muted">{tr('phút', 'min')}</span>
                 )}
               </div>
             )}
@@ -206,7 +217,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
         )}
 
         <fieldset>
-          <legend>Biểu tượng</legend>
+          <legend>{tr('Biểu tượng', 'Icon')}</legend>
           <div className="picker">
             {HABIT_ICONS.map((icon) => (
               <button
@@ -214,7 +225,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                 type="button"
                 className={`picker__item ${draft.icon === icon ? 'is-selected' : ''}`}
                 aria-pressed={draft.icon === icon}
-                aria-label={`Biểu tượng ${icon}`}
+                aria-label={tr(`Biểu tượng ${icon}`, `Icon ${icon}`)}
                 onClick={() => setDraft({ ...draft, icon })}
               >
                 {icon}
@@ -224,7 +235,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
         </fieldset>
 
         <fieldset>
-          <legend>Màu</legend>
+          <legend>{tr('Màu', 'Colour')}</legend>
           <div className="picker">
             {HABIT_COLORS.map((color) => (
               <button
@@ -232,7 +243,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                 type="button"
                 className={`picker__item picker__swatch habit-color--${color} ${draft.color === color ? 'is-selected' : ''}`}
                 aria-pressed={draft.color === color}
-                aria-label={COLOR_NAMES[color]}
+                aria-label={colorName(color)}
                 onClick={() => setDraft({ ...draft, color })}
               />
             ))}
@@ -240,13 +251,13 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
         </fieldset>
 
         <fieldset>
-          <legend>Lặp lại</legend>
+          <legend>{tr('Lặp lại', 'Repeat')}</legend>
           <div className="segmented" role="group">
             {(
               [
-                ['daily', 'Mỗi ngày'],
-                ['weekdays', 'Chọn ngày'],
-                ['perWeek', 'Số lần mỗi tuần'],
+                ['daily', tr('Mỗi ngày', 'Every day')],
+                ['weekdays', tr('Chọn ngày', 'Pick days')],
+                ['perWeek', tr('Số lần mỗi tuần', 'Times a week')],
               ] as const
             ).map(([kind, label]) => (
               <button
@@ -262,7 +273,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
           </div>
           {draft.schedule.kind === 'weekdays' && (
             <div className="chip-row">
-              {WEEKDAY_SHORT.map((label, i) => (
+              {weekdayShort().map((label, i) => (
                 <button
                   key={label}
                   type="button"
@@ -280,19 +291,19 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
               <button
                 type="button"
                 className="icon-btn"
-                aria-label="Bớt một lần"
+                aria-label={tr('Bớt một lần', 'One fewer')}
                 onClick={() => changeTimes(times - 1)}
                 disabled={times <= 1}
               >
                 −
               </button>
               <span aria-live="polite">
-                <strong>{times}</strong> lần mỗi tuần
+                <strong>{times}</strong> {tr('lần mỗi tuần', 'times a week')}
               </span>
               <button
                 type="button"
                 className="icon-btn"
-                aria-label="Thêm một lần"
+                aria-label={tr('Thêm một lần', 'One more')}
                 onClick={() => changeTimes(times + 1)}
                 disabled={times >= MAX_TIMES_PER_WEEK}
               >
@@ -303,11 +314,14 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
         </fieldset>
 
         <fieldset>
-          <legend>Cách ghi nhận</legend>
+          <legend>{tr('Cách ghi nhận', 'How it’s recorded')}</legend>
           {existing ? (
             <p className="muted small">
-              {draft.source ? describeSource(draft.source) : 'Tự đánh dấu'}. Không đổi được sau khi
-              tạo, để giữ nguyên lịch sử.
+              {draft.source ? describeSource(draft.source) : tr('Tự đánh dấu', 'You check it off')}.{' '}
+              {tr(
+                'Không đổi được sau khi tạo, để giữ nguyên lịch sử.',
+                'This can’t change after creation, so your history stays intact.',
+              )}
             </p>
           ) : (
             <>
@@ -318,7 +332,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                   aria-pressed={!draft.source}
                   onClick={() => setDraft({ ...draft, source: null })}
                 >
-                  Tự đánh dấu
+                  {tr('Tự đánh dấu', 'I check it off')}
                 </button>
                 <button
                   type="button"
@@ -332,7 +346,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                     })
                   }
                 >
-                  Tự động từ Olaa Language
+                  {tr('Tự động từ Olaa Language', 'Automatic from Olaa Language')}
                 </button>
               </div>
               {draft.source && (
@@ -346,7 +360,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                         setDraft({ ...draft, source: { kind: 'language.daily_goal' } })
                       }
                     />
-                    Đạt mục tiêu ngày
+                    {tr('Đạt mục tiêu ngày', 'Reach the daily goal')}
                   </label>
                   <label className="radio">
                     <input
@@ -360,11 +374,11 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                         })
                       }
                     />
-                    Hoàn thành
+                    {tr('Hoàn thành', 'Finish')}
                     <select
                       className="number-input"
                       value={lessonCount}
-                      aria-label="Số bài mới mỗi ngày"
+                      aria-label={tr('Số bài mới mỗi ngày', 'New lessons per day')}
                       onChange={(e) => {
                         const n = Number(e.target.value);
                         setLessonCount(n);
@@ -377,9 +391,14 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
                         </option>
                       ))}
                     </select>
-                    bài mới trong ngày
+                    {tr('bài mới trong ngày', 'new lessons in a day')}
                   </label>
-                  <p className="muted small">Cần đăng nhập cùng một tài khoản Olaa ở cả hai app.</p>
+                  <p className="muted small">
+                    {tr(
+                      'Cần đăng nhập cùng một tài khoản Olaa ở cả hai app.',
+                      'Sign in with the same Olaa account in both apps.',
+                    )}
+                  </p>
                 </div>
               )}
             </>
@@ -394,30 +413,34 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
 
         <div className="form-actions">
           <button type="submit" className="btn">
-            {existing ? 'Lưu' : 'Tạo thói quen'}
+            {existing ? tr('Lưu', 'Save') : tr('Tạo thói quen', 'Create habit')}
           </button>
           <button
             type="button"
             className="btn btn--ghost"
             onClick={() => navigate({ name: existing ? 'habits' : 'today' })}
           >
-            Huỷ
+            {tr('Huỷ', 'Cancel')}
           </button>
         </div>
       </form>
 
       {existing && (
         <p className="muted small">
-          Đổi lịch lặp hoặc mục tiêu chỉ áp dụng từ hôm nay; những ngày trước vẫn được tính theo kế
-          hoạch cũ.
+          {tr(
+            'Đổi lịch lặp hoặc mục tiêu chỉ áp dụng từ hôm nay; những ngày trước vẫn được tính theo kế hoạch cũ.',
+            'Changes to the schedule or target apply from today; earlier days keep the old plan.',
+          )}
         </p>
       )}
 
       {existing && !existing.archivedOn && (
         <div className="card stack">
           <p className="muted small">
-            Tạm dừng khi đi xa, ốm hoặc cần nghỉ. Ngày tạm dừng không tính vào tỷ lệ nhất quán và
-            không làm đứt chuỗi.
+            {tr(
+              'Tạm dừng khi đi xa, ốm hoặc cần nghỉ. Ngày tạm dừng không tính vào tỷ lệ nhất quán và không làm đứt chuỗi.',
+              'Pause when travelling, ill or taking a break. Paused days don’t count against consistency and don’t break the streak.',
+            )}
           </p>
           <button
             type="button"
@@ -426,7 +449,9 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
               appStore.update((s) => setPaused(s, existing.id, !isPausedNow(existing), today))
             }
           >
-            {isPausedNow(existing) ? 'Tiếp tục thói quen' : 'Tạm dừng thói quen'}
+            {isPausedNow(existing)
+              ? tr('Tiếp tục thói quen', 'Resume habit')
+              : tr('Tạm dừng thói quen', 'Pause habit')}
           </button>
         </div>
       )}
@@ -434,7 +459,10 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
       {existing && (
         <div className="card stack">
           <p className="muted small">
-            Lưu trữ để ẩn thói quen. Lịch sử và chuỗi vẫn được giữ, có thể khôi phục.
+            {tr(
+              'Lưu trữ để ẩn thói quen. Lịch sử và chuỗi vẫn được giữ, có thể khôi phục.',
+              'Archive to hide the habit. History and streaks are kept, and you can restore it.',
+            )}
           </p>
           <button
             type="button"
@@ -444,7 +472,7 @@ export function HabitFormPage({ today, habitId }: { today: DayKey; habitId?: str
               navigate({ name: 'habits' });
             }}
           >
-            Lưu trữ thói quen
+            {tr('Lưu trữ thói quen', 'Archive habit')}
           </button>
         </div>
       )}

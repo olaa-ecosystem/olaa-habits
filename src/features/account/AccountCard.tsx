@@ -8,12 +8,17 @@ import {
   useAccount,
   type SyncStatus,
 } from '../../services/cloudSync';
+import { tr } from '../../i18n/locale';
 
-const STATUS_TEXT: Partial<Record<SyncStatus, string>> = {
-  connecting: 'Đang kiểm tra tài khoản…',
-  syncing: 'Đang lưu lên tài khoản…',
-  synced: 'Thói quen đã lưu vào tài khoản và đồng bộ giữa các thiết bị.',
-};
+const statusText = (status: SyncStatus): string | undefined =>
+  ({
+    connecting: tr('Đang kiểm tra tài khoản…', 'Checking your account…'),
+    syncing: tr('Đang lưu lên tài khoản…', 'Saving to your account…'),
+    synced: tr(
+      'Thói quen đã lưu vào tài khoản và đồng bộ giữa các thiết bị.',
+      'Habits are saved to your account and sync across your devices.',
+    ),
+  })[status as 'connecting' | 'syncing' | 'synced'];
 
 /** Olaa ID sign-in and sync status (REQ-02-030/031). Renders nothing without Firebase config. */
 export function AccountCard({ intro }: { intro?: string }) {
@@ -40,10 +45,11 @@ export function AccountCard({ intro }: { intro?: string }) {
     return (
       <div className="card account-card">
         <p>
-          Đã đăng nhập: <strong>{account.email}</strong>
+          {tr('Đã đăng nhập: ', 'Signed in as ')}
+          <strong>{account.email}</strong>
         </p>
         <p className={`small ${account.status === 'error' ? 'form-error' : 'muted'}`}>
-          {account.status === 'error' ? account.error : STATUS_TEXT[account.status]}
+          {account.status === 'error' ? account.error : statusText(account.status)}
         </p>
         <button
           type="button"
@@ -51,7 +57,7 @@ export function AccountCard({ intro }: { intro?: string }) {
           disabled={busy}
           onClick={() => void act(async () => (await signOutAndClear(), null))}
         >
-          Đăng xuất
+          {tr('Đăng xuất', 'Sign out')}
         </button>
       </div>
     );
@@ -64,7 +70,10 @@ export function AccountCard({ intro }: { intro?: string }) {
         const message = await sendPasswordReset(email);
         if (!message)
           setNotice(
-            `Nếu ${email.trim()} có Olaa ID, liên kết đặt mật khẩu mới đang được gửi tới. Xem hộp thư và cả thư rác.`,
+            tr(
+              `Nếu ${email.trim()} có Olaa ID, liên kết đặt mật khẩu mới đang được gửi tới. Xem hộp thư và cả thư rác.`,
+              `If ${email.trim()} has an Olaa ID, a link to set a new password is on its way. Check your inbox and spam folder.`,
+            ),
           );
         return message;
       });
@@ -80,7 +89,11 @@ export function AccountCard({ intro }: { intro?: string }) {
   return (
     <div className="card account-card">
       <p className="muted small">
-        {intro ?? 'Đăng nhập bằng Olaa ID để giữ thói quen và dùng trên mọi thiết bị.'}
+        {intro ??
+          tr(
+            'Đăng nhập bằng Olaa ID để giữ thói quen và dùng trên mọi thiết bị.',
+            'Sign in with your Olaa ID to keep your habits on every device.',
+          )}
       </p>
       <button
         type="button"
@@ -88,7 +101,7 @@ export function AccountCard({ intro }: { intro?: string }) {
         disabled={busy || account.status === 'connecting'}
         onClick={() => void act(signInWithGoogle)}
       >
-        Tiếp tục với Google
+        {tr('Tiếp tục với Google', 'Continue with Google')}
       </button>
       <form className="stack" onSubmit={onSubmit}>
         <label className="field">
@@ -103,7 +116,7 @@ export function AccountCard({ intro }: { intro?: string }) {
         </label>
         {mode !== 'reset' && (
           <label className="field">
-            <span>Mật khẩu</span>
+            <span>{tr('Mật khẩu', 'Password')}</span>
             <input
               type="password"
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
@@ -116,10 +129,10 @@ export function AccountCard({ intro }: { intro?: string }) {
         )}
         <button type="submit" className="btn btn--ghost btn--block" disabled={busy}>
           {mode === 'signin'
-            ? 'Đăng nhập bằng email'
+            ? tr('Đăng nhập bằng email', 'Sign in with email')
             : mode === 'create'
-              ? 'Tạo tài khoản'
-              : 'Gửi liên kết đặt lại'}
+              ? tr('Tạo tài khoản', 'Create account')
+              : tr('Gửi liên kết đặt lại', 'Send reset link')}
         </button>
       </form>
       {mode === 'signin' && (
@@ -132,7 +145,7 @@ export function AccountCard({ intro }: { intro?: string }) {
             setNotice(null);
           }}
         >
-          Quên mật khẩu?
+          {tr('Quên mật khẩu?', 'Forgot password?')}
         </button>
       )}
       <button
@@ -144,7 +157,9 @@ export function AccountCard({ intro }: { intro?: string }) {
           setNotice(null);
         }}
       >
-        {mode === 'signin' ? 'Chưa có tài khoản? Tạo tài khoản' : 'Quay lại đăng nhập'}
+        {mode === 'signin'
+          ? tr('Chưa có tài khoản? Tạo tài khoản', 'New here? Create an account')
+          : tr('Quay lại đăng nhập', 'Back to sign in')}
       </button>
       {notice && (
         <p className="small muted" role="status">

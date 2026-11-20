@@ -12,6 +12,7 @@ import { appStore } from '../stores/appStore';
 import type { AppState } from '../stores/appState';
 import { firebaseEnabled, loadedFirebase, loadFirebase, type FirebaseServices } from './firebase';
 import { fromRemoteDoc, initialSyncAction, toRemoteDoc } from './syncPolicy';
+import { tr } from '../i18n/locale';
 
 const META_KEY = 'olaa-habits/sync-meta';
 const PUSH_DELAY_MS = 1500;
@@ -89,7 +90,10 @@ async function push(): Promise<void> {
     if (currentUid === uid) {
       setAccount({
         status: 'error',
-        error: 'Chưa lưu được lên tài khoản. Dữ liệu vẫn an toàn trên máy này.',
+        error: tr(
+          'Chưa lưu được lên tài khoản. Dữ liệu vẫn an toàn trên máy này.',
+          'Could not save to your account. Your data is safe on this device.',
+        ),
       });
     }
   }
@@ -126,7 +130,10 @@ async function handleSignedIn(fb: FirebaseServices, user: User): Promise<void> {
       // Written by a newer app version: never overwrite it from here.
       setAccount({
         status: 'error',
-        error: 'Tài khoản được lưu bởi phiên bản app mới hơn. Tải lại trang để cập nhật.',
+        error: tr(
+          'Tài khoản được lưu bởi phiên bản app mới hơn. Tải lại trang để cập nhật.',
+          'Your account was saved by a newer version of the app. Reload the page to update.',
+        ),
       });
       return;
     }
@@ -144,7 +151,11 @@ async function handleSignedIn(fb: FirebaseServices, user: User): Promise<void> {
         if (latest && latest.updatedAt > localUpdatedAt)
           applyRemote(latest.state, latest.updatedAt);
       },
-      () => setAccount({ status: 'error', error: 'Mất kết nối với tài khoản.' }),
+      () =>
+        setAccount({
+          status: 'error',
+          error: tr('Mất kết nối với tài khoản.', 'Lost the connection to your account.'),
+        }),
     );
     setAccount({ status: 'synced' });
     userListeners.forEach((l) => l(user.uid));
@@ -152,7 +163,10 @@ async function handleSignedIn(fb: FirebaseServices, user: User): Promise<void> {
     if (currentUid === user.uid) {
       setAccount({
         status: 'error',
-        error: 'Không kết nối được tài khoản. Dữ liệu vẫn an toàn trên máy này.',
+        error: tr(
+          'Không kết nối được tài khoản. Dữ liệu vẫn an toàn trên máy này.',
+          'Could not reach your account. Your data is safe on this device.',
+        ),
       });
     }
   }
@@ -192,7 +206,10 @@ export function startCloudSync(): void {
     () =>
       setAccount({
         status: 'error',
-        error: 'Không tải được phần đăng nhập. Kiểm tra mạng rồi tải lại trang.',
+        error: tr(
+          'Không tải được phần đăng nhập. Kiểm tra mạng rồi tải lại trang.',
+          'Could not load sign-in. Check your connection and reload the page.',
+        ),
       }),
   );
 }
@@ -206,23 +223,35 @@ function authErrorMessage(error: unknown): string | null {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return 'Email hoặc mật khẩu không đúng.';
+      return tr('Email hoặc mật khẩu không đúng.', 'Email or password is incorrect.');
     case 'auth/email-already-in-use':
-      return 'Email này đã có tài khoản. Hãy đăng nhập.';
+      return tr(
+        'Email này đã có tài khoản. Hãy đăng nhập.',
+        'An account with this email already exists. Sign in instead.',
+      );
     case 'auth/weak-password':
-      return 'Mật khẩu cần ít nhất 6 ký tự.';
+      return tr('Mật khẩu cần ít nhất 6 ký tự.', 'Use at least 6 characters for the password.');
     case 'auth/invalid-email':
-      return 'Địa chỉ email chưa đúng.';
+      return tr('Địa chỉ email chưa đúng.', 'That email address does not look right.');
     case 'auth/popup-blocked':
-      return 'Trình duyệt đã chặn cửa sổ đăng nhập. Cho phép cửa sổ bật lên rồi thử lại.';
+      return tr(
+        'Trình duyệt đã chặn cửa sổ đăng nhập. Cho phép cửa sổ bật lên rồi thử lại.',
+        'Your browser blocked the sign-in window. Allow pop-ups and try again.',
+      );
     case 'auth/network-request-failed':
-      return 'Không có mạng. Kiểm tra kết nối rồi thử lại.';
+      return tr(
+        'Không có mạng. Kiểm tra kết nối rồi thử lại.',
+        'No connection. Check your internet and try again.',
+      );
     case 'auth/operation-not-allowed':
-      return 'Cách đăng nhập này chưa được bật.';
+      return tr('Cách đăng nhập này chưa được bật.', 'This sign-in method is not turned on yet.');
     case 'auth/unauthorized-domain':
-      return 'Địa chỉ web này chưa được phép đăng nhập.';
+      return tr(
+        'Địa chỉ web này chưa được phép đăng nhập.',
+        'Sign-in is not allowed on this web address yet.',
+      );
     default:
-      return 'Đăng nhập không thành công. Thử lại nhé.';
+      return tr('Đăng nhập không thành công. Thử lại nhé.', 'Sign-in failed. Please try again.');
   }
 }
 
@@ -237,10 +266,15 @@ function run(action: (fb: FirebaseServices) => Promise<unknown>): Promise<string
           () => null,
           (error: unknown) => authErrorMessage(error),
         )
-      : Promise.resolve('Chưa dùng được đăng nhập.');
+      : Promise.resolve(tr('Chưa dùng được đăng nhập.', 'Sign-in is not available.'));
   const ready = loadedFirebase();
   if (ready) return attempt(ready);
-  return loadFirebase().then(attempt, () => 'Không tải được phần đăng nhập. Kiểm tra mạng.');
+  return loadFirebase().then(attempt, () =>
+    tr(
+      'Không tải được phần đăng nhập. Kiểm tra mạng.',
+      'Could not load sign-in. Check your connection.',
+    ),
+  );
 }
 
 export function signInWithGoogle(): Promise<string | null> {

@@ -1,5 +1,6 @@
 import type { DayKey } from '../../utils/date';
 import type { Schedule } from '../scheduling/schedule';
+import { tr } from '../../i18n/locale';
 
 /**
  * Where an automatic habit gets its check-ins (REQ-02-010/011). Manual habits have none.
@@ -95,7 +96,9 @@ export function isPausedNow(habit: Pick<Habit, 'pauses'>): boolean {
 }
 
 export function unitLabel(habit: Pick<Habit, 'kind' | 'unit'>): string {
-  return kindOf(habit) === 'duration' ? 'phút' : habit.unit?.trim() || 'lần';
+  return kindOf(habit) === 'duration'
+    ? tr('phút', 'min')
+    : habit.unit?.trim() || tr('lần', 'times');
 }
 
 export function describeTarget(habit: Pick<Habit, 'kind' | 'unit' | 'target'>): string | null {
@@ -109,8 +112,14 @@ export function isAuto(habit: Pick<Habit, 'source'>): boolean {
 
 export function describeSource(source: AutoSource): string {
   return source.kind === 'language.daily_goal'
-    ? 'Tự động: đạt mục tiêu ngày ở Olaa Language'
-    : `Tự động: xong ${source.count} bài mới ở Olaa Language`;
+    ? tr(
+        'Tự động: đạt mục tiêu ngày ở Olaa Language',
+        'Automatic: daily goal reached in Olaa Language',
+      )
+    : tr(
+        `Tự động: xong ${source.count} bài mới ở Olaa Language`,
+        `Automatic: ${source.count} new lesson${source.count === 1 ? '' : 's'} done in Olaa Language`,
+      );
 }
 
 export function isValidSource(source: AutoSource | null | undefined): boolean {
@@ -154,19 +163,33 @@ export const MAX_NAME_LENGTH = 60;
 
 export function validateDraft(draft: HabitDraft): string | null {
   const name = draft.name.trim();
-  if (!name) return 'Nhập tên thói quen.';
-  if (name.length > MAX_NAME_LENGTH) return `Tên tối đa ${MAX_NAME_LENGTH} ký tự.`;
+  if (!name) return tr('Nhập tên thói quen.', 'Enter a habit name.');
+  if (name.length > MAX_NAME_LENGTH)
+    return tr(
+      `Tên tối đa ${MAX_NAME_LENGTH} ký tự.`,
+      `Use at most ${MAX_NAME_LENGTH} characters for the name.`,
+    );
   if ((draft.description ?? '').length > MAX_DESCRIPTION_LENGTH) {
-    return `Mô tả tối đa ${MAX_DESCRIPTION_LENGTH} ký tự.`;
+    return tr(
+      `Mô tả tối đa ${MAX_DESCRIPTION_LENGTH} ký tự.`,
+      `Use at most ${MAX_DESCRIPTION_LENGTH} characters for the description.`,
+    );
   }
   if (draft.kind && draft.kind !== 'binary') {
-    if (draft.source) return 'Thói quen tự động chỉ dùng loại đánh dấu xong.';
+    if (draft.source)
+      return tr(
+        'Thói quen tự động chỉ dùng loại đánh dấu xong.',
+        'Automatic habits can only be done / not done.',
+      );
     const t = draft.target;
     if (t === undefined || !Number.isFinite(t) || t <= 0 || t > MAX_TARGET) {
-      return 'Nhập mục tiêu lớn hơn 0.';
+      return tr('Nhập mục tiêu lớn hơn 0.', 'Enter a target above 0.');
     }
     if ((draft.unit ?? '').length > MAX_UNIT_LENGTH)
-      return `Đơn vị tối đa ${MAX_UNIT_LENGTH} ký tự.`;
+      return tr(
+        `Đơn vị tối đa ${MAX_UNIT_LENGTH} ký tự.`,
+        `Use at most ${MAX_UNIT_LENGTH} characters for the unit.`,
+      );
   }
   return null;
 }

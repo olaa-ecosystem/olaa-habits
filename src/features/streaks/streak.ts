@@ -1,6 +1,7 @@
 import { addDays, daysBetween, weekStartOf, type DayKey } from '../../utils/date';
 import { isDayBased, isScheduledOn, type Schedule } from '../scheduling/schedule';
 import type { Outcome } from '../habit-tracking/checkins';
+import { tr } from '../../i18n/locale';
 
 /** A stretch of days with one schedule (from the habit's plan history). */
 export interface Segment {
@@ -106,5 +107,7 @@ export function weekProgress(
 }
 
 export function formatStreak(streak: Pick<Streak, 'current' | 'unit'>): string {
-  return `${streak.current} ${streak.unit === 'day' ? 'ngày' : 'tuần'}`;
+  return streak.unit === 'day'
+    ? tr(`${streak.current} ngày`, `${streak.current} ${streak.current === 1 ? 'day' : 'days'}`)
+    : tr(`${streak.current} tuần`, `${streak.current} ${streak.current === 1 ? 'week' : 'weeks'}`);
 }

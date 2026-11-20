@@ -23,28 +23,31 @@ import {
   weekStartOf,
   type DayKey,
 } from '../../utils/date';
-import { isDayBased, isScheduledOn, WEEKDAY_SHORT } from '../scheduling/schedule';
+import { isDayBased, isScheduledOn, weekdayShort } from '../scheduling/schedule';
 import { isMeasured, isPausedOn, planOn, unitLabel } from '../habit-management/types';
 import type { Outcome } from '../habit-tracking/checkins';
 import { canFreeze, canUnfreeze, freezesLeftIn } from '../streaks/freeze';
 import { dayStatus, scheduleOn, type DayStatus } from './calendarDay';
+import { tr } from '../../i18n/locale';
 
-const OUTCOME_TEXT: Record<Outcome, string> = {
-  done: 'Đã xong',
-  partial: 'Một phần',
-  skipped: 'Bỏ qua',
-  none: 'Chưa xong',
-};
+const outcomeText = (o: Outcome): string =>
+  ({
+    done: tr('Đã xong', 'Done'),
+    partial: tr('Một phần', 'Partly'),
+    skipped: tr('Bỏ qua', 'Skipped'),
+    none: tr('Chưa xong', 'Not done'),
+  })[o];
 
-const STATUS_LABEL: Record<DayStatus, string> = {
-  none: '',
-  done: 'hoàn thành',
-  partial: 'xong một phần',
-  missed: 'bỏ lỡ',
-  frozen: 'đóng băng',
-  pending: 'chưa xong',
-  skipped: 'bỏ qua',
-};
+const statusLabel = (s: DayStatus): string =>
+  ({
+    none: '',
+    done: tr('hoàn thành', 'done'),
+    partial: tr('xong một phần', 'partly done'),
+    missed: tr('bỏ lỡ', 'missed'),
+    frozen: tr('đóng băng', 'frozen'),
+    pending: tr('chưa xong', 'not done yet'),
+    skipped: tr('bỏ qua', 'skipped'),
+  })[s];
 
 function shiftMonth(month: string, delta: number): string {
   const [y, m] = month.split('-').map(Number);
@@ -73,11 +76,11 @@ export function CalendarPage({ today }: { today: DayKey }) {
   return (
     <div className="page">
       <header className="page__head">
-        <h1>Lịch</h1>
+        <h1>{tr('Lịch', 'Calendar')}</h1>
         <label className="select">
-          <span className="visually-hidden">Xem thói quen</span>
+          <span className="visually-hidden">{tr('Xem thói quen', 'Show habit')}</span>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            <option value="all">Tất cả thói quen</option>
+            <option value="all">{tr('Tất cả thói quen', 'All habits')}</option>
             {all.map((h) => (
               <option key={h.id} value={h.id}>
                 {h.icon} {h.name}
@@ -92,7 +95,7 @@ export function CalendarPage({ today }: { today: DayKey }) {
           <button
             type="button"
             className="icon-btn"
-            aria-label="Tháng trước"
+            aria-label={tr('Tháng trước', 'Previous month')}
             onClick={() => setMonth(shiftMonth(month, -1))}
           >
             <ChevronLeftIcon />
@@ -101,14 +104,14 @@ export function CalendarPage({ today }: { today: DayKey }) {
           <button
             type="button"
             className="icon-btn"
-            aria-label="Tháng sau"
+            aria-label={tr('Tháng sau', 'Next month')}
             onClick={() => setMonth(shiftMonth(month, 1))}
           >
             <ChevronRightIcon />
           </button>
         </div>
         <div className="calendar__grid" role="grid" aria-label={formatMonth(month)}>
-          {WEEKDAY_SHORT.map((d) => (
+          {weekdayShort().map((d) => (
             <span key={d} className="calendar__weekday" role="columnheader">
               {d}
             </span>
@@ -122,7 +125,7 @@ export function CalendarPage({ today }: { today: DayKey }) {
                 type="button"
                 role="gridcell"
                 className={`day day--${status} ${outside ? 'is-outside' : ''} ${day === today ? 'is-today' : ''} ${selected === day ? 'is-selected' : ''}`}
-                aria-label={`${formatDayLong(day)}${STATUS_LABEL[status] ? `, ${STATUS_LABEL[status]}` : ''}`}
+                aria-label={`${formatDayLong(day)}${statusLabel(status) ? `, ${statusLabel(status)}` : ''}`}
                 aria-pressed={selected === day}
                 onClick={() => setSelected(selected === day ? null : day)}
               >
@@ -132,33 +135,35 @@ export function CalendarPage({ today }: { today: DayKey }) {
             );
           })}
         </div>
-        <ul className="legend" aria-label="Chú thích">
+        <ul className="legend" aria-label={tr('Chú thích', 'Legend')}>
           <li>
             <span className="day-dot day--done" />
-            Hoàn thành
+            {tr('Hoàn thành', 'Done')}
           </li>
           <li>
             <span className="day-dot day--partial" />
-            Một phần
+            {tr('Một phần', 'Partly')}
           </li>
           <li>
             <span className="day-dot day--missed" />
-            Bỏ lỡ
+            {tr('Bỏ lỡ', 'Missed')}
           </li>
           <li>
             <span className="day-dot day--frozen" />
-            Đóng băng
+            {tr('Đóng băng', 'Frozen')}
           </li>
           <li>
             <span className="day-dot day--skipped" />
-            Bỏ qua
+            {tr('Bỏ qua', 'Skipped')}
           </li>
         </ul>
       </div>
 
       {selected && renderDayPanel(selected)}
       {all.length > 0 && activeHabits(state).length === 0 && (
-        <p className="muted small">Mọi thói quen đã được lưu trữ.</p>
+        <p className="muted small">
+          {tr('Mọi thói quen đã được lưu trữ.', 'All habits are archived.')}
+        </p>
       )}
     </div>
   );
@@ -179,7 +184,12 @@ export function CalendarPage({ today }: { today: DayKey }) {
         {day <= today && (
           <ul className="day-panel__list">
             {habits.length === 0 && (
-              <li className="muted small">Không có thói quen nào có lịch vào ngày này.</li>
+              <li className="muted small">
+                {tr(
+                  'Không có thói quen nào có lịch vào ngày này.',
+                  'No habits are scheduled on this day.',
+                )}
+              </li>
             )}
             {habits.map((h) => {
               const outcome = outcomeOn(state, h, day);
@@ -194,11 +204,11 @@ export function CalendarPage({ today }: { today: DayKey }) {
                     {entry?.note && <span className="muted small">“{entry.note}”</span>}
                   </span>
                   {!canEdit ? (
-                    <span className="muted small">{OUTCOME_TEXT[outcome]}</span>
+                    <span className="muted small">{outcomeText(outcome)}</span>
                   ) : isMeasured(h) ? (
                     <label className="field field--inline">
                       <span className="visually-hidden">
-                        {h.name}: số {unitLabel(h)}
+                        {h.name}: {tr('số', 'number of')} {unitLabel(h)}
                       </span>
                       <input
                         type="number"
@@ -226,7 +236,9 @@ export function CalendarPage({ today }: { today: DayKey }) {
                         disabled={skipped}
                         onChange={() => appStore.update((s) => toggleCheckin(s, h.id, day, today))}
                       />
-                      <span className="visually-hidden">{h.name} đã xong</span>
+                      <span className="visually-hidden">
+                        {h.name} {tr('đã xong', 'done')}
+                      </span>
                     </label>
                   )}
                   {canEdit && (
@@ -238,7 +250,7 @@ export function CalendarPage({ today }: { today: DayKey }) {
                         appStore.update((s) => setSkipped(s, h.id, day, today, !skipped))
                       }
                     >
-                      Bỏ qua
+                      {tr('Bỏ qua', 'Skip')}
                     </button>
                   )}
                 </li>
@@ -247,13 +259,18 @@ export function CalendarPage({ today }: { today: DayKey }) {
           </ul>
         )}
         {day < today && editable.length === 0 && habits.length > 0 && (
-          <p className="muted small">Chỉ sửa được hôm nay và 2 ngày trước.</p>
+          <p className="muted small">
+            {tr(
+              'Chỉ sửa được hôm nay và 2 ngày trước.',
+              'Only today and the 2 days before can be edited.',
+            )}
+          </p>
         )}
         {day >= today &&
           (frozen ? (
             <div className="day-panel__freeze">
               <p>
-                <SnowIcon size={16} /> Ngày này đã đóng băng.
+                <SnowIcon size={16} /> {tr('Ngày này đã đóng băng.', 'This day is frozen.')}
               </p>
               {canUnfreeze(state.freezes, day, today) && (
                 <button
@@ -261,7 +278,7 @@ export function CalendarPage({ today }: { today: DayKey }) {
                   className="link-btn"
                   onClick={() => appStore.update((s) => setFreeze(s, day, false, today))}
                 >
-                  Bỏ đóng băng
+                  {tr('Bỏ đóng băng', 'Unfreeze')}
                 </button>
               )}
             </div>
@@ -269,7 +286,10 @@ export function CalendarPage({ today }: { today: DayKey }) {
             <div className="day-panel__freeze">
               <p className="muted small">
                 {freezeCheck.ok
-                  ? `Báo trước ngày bận để giữ chuỗi. Còn ${freezesLeftIn(state.freezes, monthOf(day))} lượt trong tháng.`
+                  ? tr(
+                      `Báo trước ngày bận để giữ chuỗi. Còn ${freezesLeftIn(state.freezes, monthOf(day))} lượt trong tháng.`,
+                      `Mark a busy day ahead to keep your streaks. ${freezesLeftIn(state.freezes, monthOf(day))} left this month.`,
+                    )
                   : freezeCheck.reason}
               </p>
               <button
@@ -278,7 +298,7 @@ export function CalendarPage({ today }: { today: DayKey }) {
                 disabled={!freezeCheck.ok}
                 onClick={() => appStore.update((s) => setFreeze(s, day, true, today))}
               >
-                Đóng băng ngày này
+                {tr('Đóng băng ngày này', 'Freeze this day')}
               </button>
             </div>
           ))}

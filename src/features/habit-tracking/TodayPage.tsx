@@ -33,6 +33,7 @@ import { describeSchedule, isScheduledOn } from '../scheduling/schedule';
 import { canFreeze, freezesLeftIn, FREEZES_PER_MONTH } from '../streaks/freeze';
 import { formatStreak, weekProgress } from '../streaks/streak';
 import { MAX_NOTE_LENGTH } from './checkins';
+import { tr } from '../../i18n/locale';
 
 /** One tap adds this much to a measured habit. */
 function stepOf(habit: Habit): number {
@@ -58,24 +59,26 @@ export function TodayPage({ today }: { today: DayKey }) {
       <header className="page__head">
         <div>
           <p className="eyebrow">{formatDayLong(today)}</p>
-          <h1>{state.name ? `Chào ${state.name}!` : 'Hôm nay'}</h1>
+          <h1>
+            {state.name ? tr(`Chào ${state.name}!`, `Hi ${state.name}!`) : tr('Hôm nay', 'Today')}
+          </h1>
         </div>
         {counted.length > 0 && (
           <p className="today-count" aria-live="polite">
-            <strong>{doneCount}</strong>/{counted.length} xong
+            <strong>{doneCount}</strong>/{counted.length} {tr('xong', 'done')}
           </p>
         )}
       </header>
 
       {habits.length === 0 ? (
         <div className="card empty">
-          <p>Bạn chưa có thói quen nào.</p>
+          <p>{tr('Bạn chưa có thói quen nào.', 'You have no habits yet.')}</p>
           <a className="btn" href={routeHref({ name: 'habit-new' })}>
-            Tạo thói quen
+            {tr('Tạo thói quen', 'Create a habit')}
           </a>
         </div>
       ) : (
-        <ul className="habit-list" aria-label="Thói quen hôm nay">
+        <ul className="habit-list" aria-label={tr('Thói quen hôm nay', 'Today’s habits')}>
           {dueToday.map((habit) => (
             <TodayRow
               key={habit.id}
@@ -93,14 +96,15 @@ export function TodayPage({ today }: { today: DayKey }) {
         <div className="card freeze-card is-on">
           <SnowIcon size={22} />
           <p>
-            <strong>Hôm nay đã đóng băng.</strong> Chuỗi của bạn được giữ nguyên.
+            <strong>{tr('Hôm nay đã đóng băng.', 'Today is frozen.')}</strong>{' '}
+            {tr('Chuỗi của bạn được giữ nguyên.', 'Your streaks are safe.')}
           </p>
           <button
             type="button"
             className="link-btn"
             onClick={() => appStore.update((s) => setFreeze(s, today, false, today))}
           >
-            Bỏ đóng băng
+            {tr('Bỏ đóng băng', 'Unfreeze')}
           </button>
         </div>
       ) : (
@@ -108,8 +112,11 @@ export function TodayPage({ today }: { today: DayKey }) {
           <div className="card freeze-card">
             <SnowIcon size={22} />
             <p>
-              <strong>Bận hôm nay?</strong> Đóng băng để giữ chuỗi của mọi thói quen. Còn{' '}
-              {freezesLeft}/{FREEZES_PER_MONTH} lượt tháng này.
+              <strong>{tr('Bận hôm nay?', 'Busy today?')}</strong>{' '}
+              {tr(
+                `Đóng băng để giữ chuỗi của mọi thói quen. Còn ${freezesLeft}/${FREEZES_PER_MONTH} lượt tháng này.`,
+                `Freeze the day to keep every streak. ${freezesLeft}/${FREEZES_PER_MONTH} left this month.`,
+              )}
             </p>
             <button
               type="button"
@@ -117,7 +124,7 @@ export function TodayPage({ today }: { today: DayKey }) {
               disabled={!canFreeze(state.freezes, today, today).ok}
               onClick={() => appStore.update((s) => setFreeze(s, today, true, today))}
             >
-              Đóng băng hôm nay
+              {tr('Đóng băng hôm nay', 'Freeze today')}
             </button>
           </div>
         )
@@ -125,7 +132,7 @@ export function TodayPage({ today }: { today: DayKey }) {
 
       {notToday.length > 0 && (
         <section>
-          <h2 className="section-title">Không có lịch hôm nay</h2>
+          <h2 className="section-title">{tr('Không có lịch hôm nay', 'Not scheduled today')}</h2>
           <ul className="habit-list habit-list--quiet">
             {notToday.map((habit) => (
               <li key={habit.id} className="habit-row">
@@ -142,8 +149,13 @@ export function TodayPage({ today }: { today: DayKey }) {
 
       {paused.length > 0 && (
         <section>
-          <h2 className="section-title">Đang tạm dừng</h2>
-          <p className="muted small">Ngày tạm dừng không tính vào tỷ lệ và không làm đứt chuỗi.</p>
+          <h2 className="section-title">{tr('Đang tạm dừng', 'Paused')}</h2>
+          <p className="muted small">
+            {tr(
+              'Ngày tạm dừng không tính vào tỷ lệ và không làm đứt chuỗi.',
+              'Paused days don’t count against your rate or break streaks.',
+            )}
+          </p>
           <ul className="habit-list habit-list--quiet">
             {paused.map((habit) => (
               <li key={habit.id} className="habit-row">
@@ -157,7 +169,7 @@ export function TodayPage({ today }: { today: DayKey }) {
                   className="btn btn--ghost"
                   onClick={() => appStore.update((s) => setPaused(s, habit.id, false, today))}
                 >
-                  Tiếp tục
+                  {tr('Tiếp tục', 'Resume')}
                 </button>
               </li>
             ))}
@@ -168,7 +180,7 @@ export function TodayPage({ today }: { today: DayKey }) {
       {habits.length > 0 && (
         <button type="button" className="add-fab" onClick={() => navigate({ name: 'habit-new' })}>
           <PlusIcon />
-          <span>Thêm thói quen</span>
+          <span>{tr('Thêm thói quen', 'Add habit')}</span>
         </button>
       )}
     </div>
@@ -196,11 +208,15 @@ function TodayRow({
   const value = entry?.status === 'done' ? (entry.value ?? 0) : 0;
 
   let meta: string;
-  if (outcome === 'skipped') meta = 'Đã bỏ qua hôm nay';
+  if (outcome === 'skipped') meta = tr('Đã bỏ qua hôm nay', 'Skipped today');
   else if (measured) meta = `${value}/${target} ${unitLabel(habit)}`;
-  else if (habit.schedule.kind === 'perWeek')
-    meta = `${weekProgress(today, habit.createdOn, (d) => isDone(state, habit.id, d))}/${habit.schedule.times} lần tuần này`;
-  else meta = describeSchedule(habit.schedule);
+  else if (habit.schedule.kind === 'perWeek') {
+    const done = weekProgress(today, habit.createdOn, (d) => isDone(state, habit.id, d));
+    meta = tr(
+      `${done}/${habit.schedule.times} lần tuần này`,
+      `${done}/${habit.schedule.times} this week`,
+    );
+  } else meta = describeSchedule(habit.schedule);
 
   return (
     <li className={`habit-row habit-row--today is-${outcome} ${open ? 'is-open' : ''}`}>
@@ -210,20 +226,23 @@ function TodayRow({
           <span className="habit-row__name">{habit.name}</span>
           <span className="habit-row__meta">
             {meta}
-            {habit.source && <span className="auto-chip">Tự động</span>}
+            {habit.source && <span className="auto-chip">{tr('Tự động', 'Automatic')}</span>}
             {streak.current > 0 && (
               <span className="streak-chip">
                 <FlameIcon size={14} />
                 {formatStreak(streak)}
               </span>
             )}
-            {entry?.note && <span className="note-chip">Có ghi chú</span>}
+            {entry?.note && <span className="note-chip">{tr('Có ghi chú', 'Note')}</span>}
           </span>
           {measured && outcome !== 'skipped' && (
             <span
               className={`meter habit-color--${habit.color}`}
               role="progressbar"
-              aria-label={`${habit.name}: ${value} trên ${target} ${unitLabel(habit)}`}
+              aria-label={tr(
+                `${habit.name}: ${value} trên ${target} ${unitLabel(habit)}`,
+                `${habit.name}: ${value} of ${target} ${unitLabel(habit)}`,
+              )}
               aria-valuemin={0}
               aria-valuemax={target}
               aria-valuenow={value}
@@ -241,7 +260,10 @@ function TodayRow({
             type="button"
             className={`check-btn check-btn--add habit-color--${habit.color}`}
             aria-pressed={outcome === 'done'}
-            aria-label={`${habit.name}: thêm ${stepOf(habit)} ${unitLabel(habit)}`}
+            aria-label={tr(
+              `${habit.name}: thêm ${stepOf(habit)} ${unitLabel(habit)}`,
+              `${habit.name}: add ${stepOf(habit)} ${unitLabel(habit)}`,
+            )}
             onClick={() =>
               appStore.update((s) => logValue(s, habit.id, today, today, value + stepOf(habit)))
             }
@@ -257,7 +279,11 @@ function TodayRow({
             type="button"
             className={`check-btn habit-color--${habit.color}`}
             aria-pressed={outcome === 'done'}
-            aria-label={`${habit.name}: ${outcome === 'done' ? 'đã xong, bấm để bỏ' : 'đánh dấu đã xong'}`}
+            aria-label={`${habit.name}: ${
+              outcome === 'done'
+                ? tr('đã xong, bấm để bỏ', 'done, tap to undo')
+                : tr('đánh dấu đã xong', 'mark as done')
+            }`}
             onClick={() => appStore.update((s) => toggleCheckin(s, habit.id, today, today))}
           >
             <CheckIcon size={26} />
@@ -267,7 +293,7 @@ function TodayRow({
           type="button"
           className="icon-btn more-btn"
           aria-expanded={open}
-          aria-label={`Tuỳ chọn cho ${habit.name}`}
+          aria-label={tr(`Tuỳ chọn cho ${habit.name}`, `Options for ${habit.name}`)}
           onClick={onToggleOpen}
         >
           ⋯
@@ -297,7 +323,9 @@ function RowOptions({ habit, state, today }: { habit: Habit; state: AppState; to
           }}
         >
           <label className="field field--inline">
-            <span>Hôm nay ({unitLabel(habit)})</span>
+            <span>
+              {tr('Hôm nay', 'Today')} ({unitLabel(habit)})
+            </span>
             <input
               type="number"
               inputMode="decimal"
@@ -308,9 +336,14 @@ function RowOptions({ habit, state, today }: { habit: Habit; state: AppState; to
             />
           </label>
           <button type="submit" className="btn btn--ghost">
-            Lưu
+            {tr('Lưu', 'Save')}
           </button>
-          {target && <span className="muted small">Mục tiêu {target}</span>}
+          {target && (
+            <span className="muted small">
+              {tr('Mục tiêu ', 'Target ')}
+              {target}
+            </span>
+          )}
         </form>
       )}
       {!habit.source && (
@@ -319,7 +352,7 @@ function RowOptions({ habit, state, today }: { habit: Habit; state: AppState; to
           className="btn btn--ghost"
           onClick={() => appStore.update((s) => setSkipped(s, habit.id, today, today, !skipped))}
         >
-          {skipped ? 'Bỏ "bỏ qua"' : 'Bỏ qua hôm nay'}
+          {skipped ? tr('Bỏ “bỏ qua”', 'Undo skip') : tr('Bỏ qua hôm nay', 'Skip today')}
         </button>
       )}
       {!habit.source && (
@@ -331,16 +364,16 @@ function RowOptions({ habit, state, today }: { habit: Habit; state: AppState; to
           }}
         >
           <label className="field field--grow">
-            <span>Ghi chú hôm nay</span>
+            <span>{tr('Ghi chú hôm nay', 'Today’s note')}</span>
             <input
               value={note}
               maxLength={MAX_NOTE_LENGTH}
-              placeholder="Ví dụ: mệt, học ít hơn"
+              placeholder={tr('Ví dụ: mệt, học ít hơn', 'e.g. tired, studied less')}
               onChange={(e) => setNoteText(e.target.value)}
             />
           </label>
           <button type="submit" className="btn btn--ghost">
-            Lưu ghi chú
+            {tr('Lưu ghi chú', 'Save note')}
           </button>
         </form>
       )}
@@ -349,7 +382,7 @@ function RowOptions({ habit, state, today }: { habit: Habit; state: AppState; to
         className="link-btn link-btn--start"
         onClick={() => appStore.update((s) => setPaused(s, habit.id, true, today))}
       >
-        Tạm dừng thói quen này
+        {tr('Tạm dừng thói quen này', 'Pause this habit')}
       </button>
     </div>
   );
@@ -363,7 +396,10 @@ function AutoStatus({ habit, done }: { habit: Habit; done: boolean }) {
       <span
         className={`check-btn is-auto habit-color--${habit.color}`}
         role="img"
-        aria-label={`${habit.name}: đã xong, ghi nhận tự động`}
+        aria-label={tr(
+          `${habit.name}: đã xong, ghi nhận tự động`,
+          `${habit.name}: done, recorded automatically`,
+        )}
       >
         <CheckIcon size={26} />
       </span>
@@ -372,13 +408,13 @@ function AutoStatus({ habit, done }: { habit: Habit; done: boolean }) {
   if (account.status !== 'off' && account.email === null) {
     return (
       <a className="auto-link" href={routeHref({ name: 'me' })}>
-        Đăng nhập để tự ghi nhận
+        {tr('Đăng nhập để tự ghi nhận', 'Sign in to record automatically')}
       </a>
     );
   }
   return (
     <a className="auto-link" href={LANGUAGE_APP_URL} target="_blank" rel="noreferrer">
-      Học ngay
+      {tr('Học ngay', 'Study now')}
     </a>
   );
 }

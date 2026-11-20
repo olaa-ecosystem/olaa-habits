@@ -9,6 +9,7 @@ import {
 } from '../../stores/appState';
 import type { Habit } from '../habit-management/types';
 import { isDayBased, isScheduledOn } from '../scheduling/schedule';
+import { tr } from '../../i18n/locale';
 
 /** Badges (module 02.10, REQ-02-024). Once earned they are kept, even if a streak breaks. */
 export type BadgeId =
@@ -23,23 +24,68 @@ export const BADGES: { id: BadgeId; icon: string; title: string; description: st
   {
     id: 'first-checkin',
     icon: '✅',
-    title: 'Bước đầu tiên',
-    description: 'Hoàn thành thói quen lần đầu.',
+    get title() {
+      return tr('Bước đầu tiên', 'First step');
+    },
+    get description() {
+      return tr('Hoàn thành thói quen lần đầu.', 'Complete a habit for the first time.');
+    },
   },
-  { id: 'streak-7', icon: '🔥', title: 'Chuỗi 7', description: 'Giữ chuỗi 7 lần liên tiếp.' },
-  { id: 'streak-30', icon: '🌟', title: 'Chuỗi 30', description: 'Giữ chuỗi 30 lần liên tiếp.' },
-  { id: 'streak-100', icon: '🏆', title: 'Chuỗi 100', description: 'Giữ chuỗi 100 lần liên tiếp.' },
+  {
+    id: 'streak-7',
+    icon: '🔥',
+    get title() {
+      return tr('Chuỗi 7', 'Streak of 7');
+    },
+    get description() {
+      return tr('Giữ chuỗi 7 lần liên tiếp.', 'Keep a streak 7 times in a row.');
+    },
+  },
+  {
+    id: 'streak-30',
+    icon: '🌟',
+    get title() {
+      return tr('Chuỗi 30', 'Streak of 30');
+    },
+    get description() {
+      return tr('Giữ chuỗi 30 lần liên tiếp.', 'Keep a streak 30 times in a row.');
+    },
+  },
+  {
+    id: 'streak-100',
+    icon: '🏆',
+    get title() {
+      return tr('Chuỗi 100', 'Streak of 100');
+    },
+    get description() {
+      return tr('Giữ chuỗi 100 lần liên tiếp.', 'Keep a streak 100 times in a row.');
+    },
+  },
   {
     id: 'freeze-used',
     icon: '❄️',
-    title: 'Nghỉ có kế hoạch',
-    description: 'Dùng đóng băng để giữ chuỗi qua một ngày bận.',
+    get title() {
+      return tr('Nghỉ có kế hoạch', 'Planned rest');
+    },
+    get description() {
+      return tr(
+        'Dùng đóng băng để giữ chuỗi qua một ngày bận.',
+        'Use a freeze to keep a streak through a busy day.',
+      );
+    },
   },
   {
     id: 'perfect-week',
     icon: '🗓️',
-    title: 'Tuần trọn vẹn',
-    description: 'Hoàn thành đủ mọi thói quen trong một tuần.',
+    get title() {
+      return tr('Tuần trọn vẹn', 'Perfect week');
+    },
+    get description() {
+      return tr(
+        'Hoàn thành đủ mọi thói quen trong một tuần.',
+        'Complete every habit for a whole week.',
+      );
+    },
   },
 ];
 

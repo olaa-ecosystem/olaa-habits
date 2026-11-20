@@ -7,8 +7,10 @@ import { completeOnboarding } from '../../stores/appState';
 import type { DayKey } from '../../utils/date';
 import { AccountCard } from '../account/AccountCard';
 import { HABIT_TEMPLATES } from '../habit-management/templates';
+import { LocalePicker } from '../../i18n/LocalePicker';
 import { describeSchedule } from '../scheduling/schedule';
 import { describeTarget } from '../habit-management/types';
+import { tr } from '../../i18n/locale';
 
 /** First run: pick starter habits (learning first) or sign in to an existing account. */
 export function WelcomePage({ today }: { today: DayKey }) {
@@ -40,18 +42,32 @@ export function WelcomePage({ today }: { today: DayKey }) {
             <CheckIcon size={44} />
           </div>
           <h1>
-            Giữ thói quen học tập <span className="brand">mỗi ngày</span>
+            {tr('Giữ thói quen học tập ', 'Keep your study habits ')}
+            <span className="brand">{tr('mỗi ngày', 'every day')}</span>
           </h1>
-          <p>Đặt thói quen nhỏ, đánh dấu trong một chạm, và giữ chuỗi kể cả những ngày bận.</p>
+          <p>
+            {tr(
+              'Đặt thói quen nhỏ, đánh dấu trong một chạm, và giữ chuỗi kể cả những ngày bận.',
+              'Set small habits, check them off in one tap, and keep your streak even on busy days.',
+            )}
+          </p>
+          <LocalePicker />
           <button
             type="button"
             className="btn btn--block"
             onClick={() => setStep('pick')}
             autoFocus
           >
-            Bắt đầu
+            {tr('Bắt đầu', 'Get started')}
           </button>
-          {firebaseEnabled && <AccountCard intro="Đã dùng Olaa Habits? Đăng nhập để tiếp tục." />}
+          {firebaseEnabled && (
+            <AccountCard
+              intro={tr(
+                'Đã dùng Olaa Habits? Đăng nhập để tiếp tục.',
+                'Already using Olaa Habits? Sign in to continue.',
+              )}
+            />
+          )}
         </section>
       </div>
     );
@@ -60,14 +76,19 @@ export function WelcomePage({ today }: { today: DayKey }) {
   return (
     <div className="welcome">
       <section className="welcome__panel">
-        <h1>Bắt đầu với vài thói quen</h1>
-        <p>Chọn những thói quen muốn theo dõi. Bạn có thể sửa hoặc thêm sau.</p>
+        <h1>{tr('Bắt đầu với vài thói quen', 'Start with a few habits')}</h1>
+        <p>
+          {tr(
+            'Chọn những thói quen muốn theo dõi. Bạn có thể sửa hoặc thêm sau.',
+            'Pick the habits you want to track. You can edit or add more later.',
+          )}
+        </p>
         <label className="field">
-          <span>Tên của bạn (không bắt buộc)</span>
+          <span>{tr('Tên của bạn (không bắt buộc)', 'Your name (optional)')}</span>
           <input
             value={name}
             maxLength={40}
-            placeholder="Tên của bạn"
+            placeholder={tr('Tên của bạn', 'Your name')}
             onChange={(e) => setName(e.target.value)}
           />
         </label>
@@ -90,7 +111,7 @@ export function WelcomePage({ today }: { today: DayKey }) {
                     <span className="habit-row__meta">
                       {describeSchedule(t.schedule)}
                       {describeTarget(t) && <span>· {describeTarget(t)}</span>}
-                      {t.source && <span className="auto-chip">Tự động</span>}
+                      {t.source && <span className="auto-chip">{tr('Tự động', 'Automatic')}</span>}
                     </span>
                   </span>
                   <span className="template__check" aria-hidden>
@@ -102,10 +123,15 @@ export function WelcomePage({ today }: { today: DayKey }) {
           })}
         </ul>
         <button type="button" className="btn btn--block" onClick={finish}>
-          {picked.length > 0 ? `Tạo ${picked.length} thói quen` : 'Bắt đầu, chưa chọn gì'}
+          {picked.length > 0
+            ? tr(
+                `Tạo ${picked.length} thói quen`,
+                `Create ${picked.length} habit${picked.length === 1 ? '' : 's'}`,
+              )
+            : tr('Bắt đầu, chưa chọn gì', 'Start without any')}
         </button>
         <button type="button" className="link-btn" onClick={() => setStep('hello')}>
-          Quay lại
+          {tr('Quay lại', 'Back')}
         </button>
       </section>
     </div>
