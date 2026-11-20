@@ -74,7 +74,7 @@
   padding: 6px 12px;
   color: var(--success-dark);
   font-size: 26px;
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.02em;
   text-decoration: none;
 }
@@ -82,7 +82,7 @@
   margin-left: 2px;
   color: var(--accent);
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .nav-link {
   display: flex;
@@ -93,7 +93,7 @@
   border: 2px solid transparent;
   border-radius: var(--radius-sm);
   color: var(--ink-soft);
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
 }
 .nav-link:hover {
@@ -131,14 +131,14 @@
 }
 .eyebrow {
   color: var(--ink-soft);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 .today-count {
   color: var(--ink-soft);
-  font-weight: 800;
+  font-weight: 700;
 }
 .today-count strong {
   color: var(--success-dark);
@@ -203,7 +203,7 @@
   gap: 2px;
 }
 .habit-row__name {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 17px;
   overflow-wrap: anywhere;
 }
@@ -214,11 +214,11 @@
   gap: 4px 10px;
   color: var(--ink-soft);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .habit-row__edit {
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
 }
 .streak-chip {
@@ -226,7 +226,7 @@
   align-items: center;
   gap: 3px;
   color: var(--accent);
-  font-weight: 800;
+  font-weight: 700;
 }
 .check-btn {
   display: grid;
@@ -283,7 +283,7 @@
   border: none;
   background: none;
   color: var(--primary);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 15px;
   cursor: pointer;
 }
@@ -298,7 +298,7 @@
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
 }
 .calendar {
   display: grid;
@@ -321,7 +321,7 @@
   text-align: center;
   color: var(--ink-soft);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .day {
   position: relative;
@@ -334,7 +334,7 @@
   background: var(--surface-2);
   color: var(--ink);
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .day svg {
@@ -382,7 +382,7 @@
   gap: 6px 16px;
   color: var(--ink-soft);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .legend li {
   display: flex;
@@ -416,7 +416,7 @@
 }
 .day-panel__list li > span:nth-child(2) {
   flex: 1;
-  font-weight: 700;
+  font-weight: 600;
 }
 .day-panel__freeze {
   display: grid;
@@ -441,13 +441,16 @@
 /* ================= forms ================= */
 .field {
   display: grid;
+  min-width: 0;
   gap: 6px;
 }
 .field > span,
 fieldset legend {
-  font-weight: 800;
+  font-weight: 700;
 }
 .field input {
+  width: 100%;
+  min-width: 0;
   min-height: 52px;
   padding: 0 16px;
   border: 2px solid var(--line);
@@ -512,7 +515,7 @@ fieldset {
   background: transparent;
   color: var(--ink-soft);
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
   cursor: pointer;
 }
@@ -535,7 +538,7 @@ fieldset {
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
 }
 .chip.is-selected {
@@ -547,13 +550,13 @@ fieldset {
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .stepper .icon-btn {
   border: 2px solid var(--line);
   color: var(--ink);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .stepper .icon-btn:disabled {
   opacity: 0.4;
@@ -561,7 +564,7 @@ fieldset {
 }
 .form-error {
   color: var(--danger-dark);
-  font-weight: 700;
+  font-weight: 600;
 }
 .form-actions {
   display: flex;
@@ -569,13 +572,14 @@ fieldset {
   gap: 10px;
 }
 .link-btn {
+  max-width: 100%;
   justify-self: center;
   padding: 10px;
   border: none;
   background: none;
   color: var(--primary);
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -587,6 +591,7 @@ fieldset {
 }
 .account-card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -608,7 +613,7 @@ fieldset {
 .stat-tile span {
   color: var(--ink-soft);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .badge-grid {
   list-style: none;
@@ -638,14 +643,17 @@ fieldset {
 /* ================= welcome ================= */
 .welcome {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-height: 100%;
   place-items: center;
   padding: 32px 16px;
 }
 .welcome__panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   width: 100%;
+  justify-self: center;
   max-width: 480px;
   text-align: center;
   animation: pop-in 0.3s ease-out;
@@ -771,7 +779,7 @@ fieldset {
   background: var(--primary-soft);
   color: var(--primary-dark);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .check-btn.is-auto {
   background: var(--habit);
@@ -789,7 +797,7 @@ fieldset {
   border-radius: var(--radius-sm);
   color: var(--primary);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
   text-decoration: none;
 }
@@ -801,7 +809,7 @@ fieldset {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
 }
 .radio input[type='radio'] {
@@ -818,7 +826,7 @@ fieldset {
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-weight: 800;
+  font-weight: 700;
   text-align: center;
 }
 
@@ -850,14 +858,14 @@ fieldset {
 .more-btn {
   flex: none;
   font-size: 22px;
-  font-weight: 900;
+  font-weight: 800;
   color: var(--ink-soft);
 }
 .check-btn--add svg {
   opacity: 1;
 }
 .check-btn__plus {
-  font-weight: 900;
+  font-weight: 800;
   font-size: 16px;
 }
 .meter {
@@ -914,7 +922,7 @@ fieldset {
   padding: 1px 8px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .note-chip {
   background: var(--surface-2);
@@ -938,7 +946,7 @@ fieldset {
   display: grid;
   flex: 1;
   min-width: 120px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .day-panel__item .field--inline {
   display: flex;
