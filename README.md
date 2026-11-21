@@ -1,88 +1,45 @@
 # Olaa Habits
 
-Habit tracking for students, with learning habits first (Habits PRD in
-`olaa-platform/architecture/02-olaa-habits/requirements/PRD.md`).
+Theo dõi thói quen cho học sinh, ưu tiên thói quen học tập. PRD: `olaa-platform/architecture/02-olaa-habits/requirements/PRD.md`.
 
-## Status
+## Trạng thái giao diện
 
-MVP web app (pre-release). Same stack and layout as `olaa-language`.
+**Giao diện (frontend) đã được gỡ khỏi repository ngày 2026-11-21** theo yêu cầu của chủ dự án, để import bộ giao diện mới sau. Repository hiện chỉ giữ phần logic và dữ liệu, có test. `index.html` có sẵn `<div id="root">`; `src/main.ts` chỉ khởi chạy các dịch vụ dữ liệu. Giao diện mới gắn vào `#root` và dùng các module bên dưới.
 
-Implemented (PRD P0 + sign-in/sync):
-- **Habits:** create, edit, archive and restore; icon, colour, schedule (every day, chosen
-  weekdays, or N times a week); done/not done, quantity or duration with a target. Starter
-  habits during onboarding.
-- **Humane tracking (PRD v1.0 §7.3):** skip a day, add a note, pause a habit; a schedule or
-  target change applies from today and never rewrites past days; 30-day consistency shown
-  next to streaks.
-- **Today:** habits due today, one tap to check off, done count, streak per habit.
-- **Streaks:** current and best streak. A frozen day keeps a streak without adding to it;
-  "N times a week" habits count weeks.
-- **Freeze:** plan busy days (today or later), 2 per month, cancel until the day passes.
-- **Calendar:** month grid of done / partial / missed / frozen days, filter by habit, correct
-  check-ins for today and the 2 days before, plan freezes.
-- **Badges:** first check-in, streak 7 / 30 / 100, first freeze, perfect week. Kept once earned.
-- **Account:** Olaa ID sign-in (Google, email) and sync to Firestore `habits/{uid}`. Without
-  Firebase config the app runs local-only.
-- **UI:** Vietnamese, phone / iPad / desktop layouts, keyboard and screen-reader labels,
-  light and dark themes.
+Yêu cầu giao diện: `olaa-platform/architecture/PRD/UIUX_PRD_v0.1.md` và `UI_BUTTONS_PRD_v0.1.md`.
 
-- **Automatic habits:** "reach the daily goal" or "finish N new lessons" in Olaa Language,
-  checked from Firestore `events/` (contract `olaa-platform/contracts/events/language-events.md`).
-  Needs the same Olaa account in both apps.
-
-Not yet: speaking and flashcard signals (REQ-02-012/013), reminders (REQ-02-022/023).
-
-## Project layout
+## Phần logic còn lại
 
 ```
 src/
-  app/                 App root, shell, hash router
-  components/          Icons, habit badge
   features/
-    habit-management/  Habit types, templates, list and form (02.01)
-    scheduling/        Schedules (02.02)
-    habit-tracking/    Today page (02.03)
-    streaks/           Streaks and freezes (02.04)
-    calendar/          Month calendar (02.07)
-    gamification/      Badges (02.10)
-    profile/           Stats, badges, account, settings
-    onboarding/        First-run flow
-    account/           Sign-in card
-  services/            Local storage, Firebase, sync
-  stores/              App state (pure actions) and store hook
-  utils/               Dates (Monday-first weeks, local day keys)
-tests/integration/     App-level tests
+    habit-management/        Thói quen, kiểu đo, kiểm tra hợp lệ, thói quen mẫu
+    habit-tracking/          Điểm danh (xong, bỏ qua, một phần, ghi chú), tự động từ Olaa Language
+    scheduling/              Lịch lặp (mỗi ngày, chọn ngày, N lần mỗi tuần)
+    streaks/                 Chuỗi, tỷ lệ nhất quán, đóng băng
+    calendar/                Trạng thái từng ngày
+    gamification/            Huy hiệu
+    data-export/             Xuất dữ liệu người dùng (JSON)
+  stores/                    Trạng thái app (phiên bản 2, có chuyển đổi dữ liệu cũ) và store
+  services/                  Firebase Auth/Firestore, đồng bộ, nhận sự kiện từ Olaa Language
+  i18n/                      Song ngữ Việt/Anh: tr(vi, en)
+  utils/                     Ngày
 ```
 
-## Development
+## Phát triển
 
-Requires Node 20+ and pnpm 9.
+Cần Node 20+ và pnpm 9.
 
 ```bash
 pnpm install
-pnpm dev          # http://localhost:5173
-pnpm test
+pnpm test         # test phần logic
 pnpm lint
 pnpm typecheck
-pnpm build
+pnpm build        # dist/ (chưa có giao diện)
 ```
 
-Firebase web config (public, not a secret) is in `.env.production` / `.env.development`.
-Firestore rules live in `olaa-platform/infrastructure/firebase/`.
+Deploy: Firebase Hosting site `olaa-habits` (project `olaa-ecosystem`), GitHub Actions deploy bản xem trước cho PR và bản chính khi merge `main` (`.github/workflows/deploy.yml`). Luật Firestore nằm ở `olaa-platform/infrastructure/firebase/`.
 
-Deploy to Firebase Hosting site `olaa-habits` (create the site once with
-`npx firebase-tools hosting:sites:create olaa-habits`):
+## Bảo mật
 
-```bash
-pnpm build && npx firebase-tools deploy --only hosting
-```
-
-## Known debt
-
-`src/services/firebase.ts`, `cloudSync.ts`, `syncPolicy.ts`, `src/utils/date.ts` and
-`src/styles/global.css` are copied from `olaa-language`. They belong in a Shared Core package
-(platform branch 04) once the package publishing decision is made.
-
-## Security
-
-See `SECURITY.md` and `docs/security/SECURITY_BASELINE.md`.
+Xem `SECURITY.md`.
