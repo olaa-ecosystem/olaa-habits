@@ -3,6 +3,9 @@
 All notable changes will be recorded here. Until the first release, this repository is in pre-development foundation stage.
 
 ## Unreleased
+
+- 2026-11-21: repository foundation completed: `CLAUDE.md` (rules for AI agents), `LICENSE` (proprietary), `.github/CODEOWNERS`, issue template config with a private security report link, `.gitattributes`, `.nvmrc` (Node 22).
+- 2026-11-21: interface removed to import a new frontend later; only logic, data and tests remain (see README).
 - Repository foundation initialized.
 - MVP web app (React + Vite + TypeScript, same stack as olaa-language, platform ADR-0003):
   - Habits with icon, colour and schedule (every day, chosen weekdays, N times a week); archive and restore.
