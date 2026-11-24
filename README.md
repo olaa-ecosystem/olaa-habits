@@ -1,25 +1,45 @@
-# OLAA Habit
+# Olaa Habits
 
-Independent habit tracking and personal growth platform
+Habit tracker for students in the Olaa ecosystem. It looks and works like Olaa Note (same tokens, buttons, cards, fonts, Vietnamese/English interface) and checks off learning habits from real activity in Olaa Language.
 
-## Product scope
-- **In scope:** Habits, routines, goals, streaks, milestones, calendar, reminders, analytics and optional integrations with learning activity.
-- **Out of scope:** Lesson content authoring, notebook editor, handwriting canvas and PDF workspace.
+## What it does
 
-## Repository status
-Foundation stage — repository scaffold and documentation only. No production functionality is implemented.
+| Area       | Features                                                                                                                       | Module |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Habits     | Create, edit, archive/restore, delete; 16 icons, 8 colours; templates for learning, health and mind; reorder                   | 02.01  |
+| Scheduling | Every day, chosen weekdays, or N times a week; start date; morning/afternoon/evening groups; week starts Monday or Sunday      | 02.02  |
+| Tracking   | One-tap check-off; count habits (8 glasses, 10 pages) with − / + ; undo; edit today and the 2 days before; a note per day      | 02.03  |
+| Streaks    | Current and best streak (in weeks for N-a-week habits); streak freezes for busy days (default 2 a month); habit strength score | 02.04  |
+| Calendar   | Month view per habit or all habits; done / partly / frozen / missed shown by colour and icon; tap a future day to freeze it    | 02.07  |
+| Reminders  | Daily time per habit; skipped when already done; suggested time after 7 days of data                                           | 02.08  |
+| Statistics | 7- and 30-day completion, completions per week, 20-week heatmap, per-habit table                                               | 02.09  |
+| Badges     | First check, 7/30/100-day streaks, first freeze, perfect week, first Language auto check-off; kept forever                     | 02.10  |
+| Insights   | Best and weakest weekday; habits that keep slipping, with a concrete suggestion                                                | 02.11  |
+| Settings   | Language, light/dark/device theme, week start, freezes per month, notifications, JSON export/import                            | 02.12  |
 
-## Start here
-1. Read `docs/product/SCOPE.md`.
-2. Read `docs/architecture/ARCHITECTURE.md` and `TECH_STACK.md`.
-3. Review `docs/engineering/AI_AGENT_RULES.md` before using an AI coding agent.
-4. Review the roadmap and requirements register.
+### Olaa integrations
 
-## Development setup
-Setup instructions will be added after the stack is approved.
+- **Olaa ID and sync**: sign in with the same Firebase account as Olaa Language. Habits are stored on the device first and mirrored to Firestore `habits/{uid}`; the newest copy wins.
+- **Olaa Language → Habits**: habits of type "Language daily goal" or "N new Language lessons" are checked off by the events Olaa Language already writes to Firestore `events/`. They cannot be ticked by hand and show a "Study now" button instead. Late and repeated events are counted once, on the right day.
+- **Olaa Note**: a habit can link to an Olaa Note notebook and open it in one tap; a habit's journal notes can be copied into an Olaa Note page. The header has a Language / Habits / Note switcher.
 
-## Security
-See `SECURITY.md` and `docs/security/SECURITY_BASELINE.md`.
+Details and planned next steps: [`docs/api/OLAA_INTEGRATIONS.md`](docs/api/OLAA_INTEGRATIONS.md).
 
-## Contributing
-See `CONTRIBUTING.md`.
+## Development
+
+```bash
+pnpm install
+pnpm dev          # http://localhost:5173
+pnpm test         # unit + integration tests (Vitest)
+pnpm typecheck && pnpm lint && pnpm build
+```
+
+Without Firebase variables the app runs on-device only. `.env.development` and `.env.production` hold the public web config of project `olaa-ecosystem` (the same one Olaa Language uses; not a secret).
+
+## Stack
+
+Same as Olaa Note: React 18 + Vite 5 + TypeScript (strict), plain CSS with design tokens, hash router, Vitest + Testing Library, ESLint + Prettier, GitHub Actions, Firebase Hosting (site `olaa-habits`). See [ADR-0001](docs/decisions/ADR-0001-web-app-stack.md).
+
+## Documents
+
+Scope `docs/product/SCOPE.md` · requirements `docs/product/REQUIREMENTS.md` · modules `docs/architecture/MODULES.md` · agent rules `docs/engineering/AI_AGENT_RULES.md` · security `SECURITY.md`.

@@ -1,23 +1,17 @@
 # Technology Stack
 
-## Proposed, not yet approved
-- TypeScript
-- React + Vite
-- Tailwind CSS (decision pending design-system needs)
-- pnpm
-- Vitest + React Testing Library
-- Playwright E2E
-- ESLint + Prettier
-- GitHub Actions
+Approved in `docs/decisions/ADR-0001-web-app-stack.md` (2026-11-24), matching Olaa Note and Olaa Language.
 
-## Must be decided before application scaffold
-- React version and runtime baseline
-- Router
-- State management strategy
-- UI primitives and design tokens
-- API client generation approach
-- Authentication SDK / OLAA ID integration
-- Local persistence and sync approach
-- Deployment provider
-
-Do not install dependencies until decisions are recorded and approved.
+| Concern | Choice |
+|---|---|
+| Language | TypeScript 5.6, strict |
+| UI | React 18.3, Vite 5.4 |
+| Styling | Plain CSS with design tokens (from Olaa Note) |
+| Router | Hash router (`src/app/router.ts`) |
+| State | Module stores with `useSyncExternalStore` |
+| Local persistence | localStorage, versioned JSON |
+| Identity, sync, events | Firebase 13.2 (Auth, Firestore), project `olaa-ecosystem` |
+| Tests | Vitest 2.1, Testing Library, jsdom |
+| Quality | ESLint 9, Prettier 3, `pnpm audit` in CI |
+| Package manager | pnpm 9 |
+| Hosting | Firebase Hosting, site `olaa-habits` |

@@ -1,16 +1,8 @@
-# Local-first & Sync Strategy
+# Local-first & Sync
 
-## Status
-Design pending. No sync behavior should be assumed.
-
-## Decisions required
-- Which features work offline?
-- Local storage technology and schema.
-- Sync direction and scheduling.
-- Conflict resolution rules.
-- Retry, backoff, idempotency.
-- Account switching and shared-device behavior.
-- Export, deletion, and recovery.
-- Encryption and sensitive content handling.
-
-Define product-specific behavior and test offline transitions before implementation.
+- Everything works offline and without an account. State lives in localStorage key `olaa-habits/state` (versioned, `STATE_VERSION = 1`).
+- Signed in: each local change is written to Firestore `habits/{uid}` after 1.5 s; changes from other devices arrive by snapshot listener.
+- After sign-in: empty device pulls; no account copy pushes; otherwise newer `updatedAt` wins. A document with an unknown `schemaVersion` is never overwritten.
+- Language events are facts, not edits: they are merged into any copy, never lost by a pull.
+- Sign-out flushes pending writes, then clears the device.
+- Backup: JSON export/import in Settings.

@@ -1,0 +1,9 @@
+{
+  "name": "Olaa Habits",
+  "short_name": "Habits",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fdf7ec",
+  "theme_color": "#fdf7ec",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
