@@ -31,6 +31,10 @@ export interface EarnedBadge {
   habitId: string | null;
 }
 
+/** How the day felt, picked once a day as in Olaa Note's Today view. */
+export const MOODS = ['great', 'good', 'okay', 'low', 'rough'] as const;
+export type Mood = (typeof MOODS)[number];
+
 export interface HabitState {
   version: typeof STATE_VERSION;
   habits: Record<string, Habit>;
@@ -40,6 +44,8 @@ export interface HabitState {
   freezes: Record<DayKey, { createdAt: number }>;
   /** Earned once, never taken away (REQ-02-024). */
   badges: Partial<Record<BadgeId, EarnedBadge>>;
+  /** Mood of each day (optional; added after version 1 without a format change). */
+  moods: Record<DayKey, Mood>;
   /** Events from other apps by event id. */
   events: Record<string, ReceivedEvent>;
   settings: Settings;
@@ -56,6 +62,7 @@ export function emptyState(): HabitState {
     checkIns: {},
     freezes: {},
     badges: {},
+    moods: {},
     events: {},
     settings: defaultSettings(),
   };
@@ -67,9 +74,17 @@ export function parseState(raw: unknown): HabitState | null {
   const s = raw as Partial<HabitState>;
   if (s.version !== STATE_VERSION) return null;
   if (typeof s.habits !== 'object' || typeof s.checkIns !== 'object') return null;
+  // Fill fields added after a record was saved, so older data keeps working unchanged.
+  const habits: Record<string, Habit> = {};
+  for (const [id, h] of Object.entries(s.habits ?? {})) habits[id] = { ...h, why: h.why ?? '' };
+  const moods: Record<DayKey, Mood> = {};
+  for (const [day, m] of Object.entries(s.moods ?? {}))
+    if ((MOODS as readonly string[]).includes(m)) moods[day] = m;
   return {
     ...emptyState(),
     ...s,
+    habits,
+    moods,
     settings: { ...defaultSettings(), ...(s.settings ?? {}) },
   } as HabitState;
 }

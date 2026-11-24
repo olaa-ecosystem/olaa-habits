@@ -17,6 +17,7 @@ export function habit(over: Partial<Habit> = {}): Habit {
     reminder: null,
     noteLink: null,
     startDate: '2026-11-01',
+    why: '',
     createdAt: 0,
     updatedAt: 0,
     archivedAt: null,

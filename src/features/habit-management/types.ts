@@ -63,6 +63,8 @@ export interface Habit {
   source: HabitSource;
   /** Daily reminder time "HH:MM", or null (REQ-02-022). */
   reminder: string | null;
+  /** Why this habit matters to the user, shown on the habit page as a reminder. */
+  why: string;
   /** Link to a notebook or page in Olaa Note, opened from the habit (Olaa Note integration). */
   noteLink: string | null;
   /** First day the habit is due. Days before it never count as missed. */

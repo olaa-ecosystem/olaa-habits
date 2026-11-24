@@ -14,7 +14,7 @@ import {
 import { canEditDay } from '../features/habit-tracking/progress';
 import type { DayKey } from '../utils/date';
 import { newId } from '../utils/id';
-import type { HabitState, Settings } from './habitState';
+import type { HabitState, Mood, Settings } from './habitState';
 
 export interface HabitInput {
   name: string;
@@ -28,6 +28,7 @@ export interface HabitInput {
   reminder: string | null;
   noteLink: string | null;
   startDate: DayKey;
+  why: string;
 }
 
 export const NAME_MAX = 60;
@@ -46,6 +47,7 @@ export function sanitizeInput(input: HabitInput): HabitInput {
   return {
     ...input,
     name: input.name.trim().slice(0, NAME_MAX),
+    why: (input.why ?? '').trim().slice(0, 200),
     unit: target > 1 ? input.unit.trim().slice(0, 16) : '',
     target: input.source.kind === 'language.daily_goal' ? 1 : target,
     schedule,
@@ -210,4 +212,18 @@ export function unfreezeDay(state: HabitState, day: DayKey, today: DayKey): Habi
 
 export function updateSettings(state: HabitState, patch: Partial<Settings>): HabitState {
   return { ...state, settings: { ...state.settings, ...patch } };
+}
+
+/** Set or clear the mood of a day. Only today and past days. */
+export function setMood(
+  state: HabitState,
+  day: DayKey,
+  mood: Mood | null,
+  today: DayKey,
+): HabitState {
+  if (day > today || (state.moods[day] ?? null) === mood) return state;
+  const moods = { ...state.moods };
+  if (mood) moods[day] = mood;
+  else delete moods[day];
+  return { ...state, moods };
 }

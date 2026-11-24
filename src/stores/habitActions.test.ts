@@ -27,6 +27,7 @@ const input: HabitInput = {
   reminder: null,
   noteLink: null,
   startDate: TODAY,
+  why: '',
 };
 
 describe('habit actions', () => {

@@ -16,6 +16,7 @@ export interface HabitTemplate {
 const base = (startDate: DayKey) => ({
   reminder: null,
   noteLink: null,
+  why: '',
   startDate,
   timeOfDay: 'any' as const,
   source: { kind: 'manual' } as const,

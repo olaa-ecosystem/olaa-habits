@@ -1,6 +1,18 @@
 # Olaa Habits
 
-Habit tracker for students in the Olaa ecosystem. It looks and works like Olaa Note (same tokens, buttons, cards, fonts, Vietnamese/English interface) and checks off learning habits from real activity in Olaa Language.
+Habit tracker for students in the Olaa ecosystem. It checks off learning habits from real activity in Olaa Language and links habits to Olaa Note notebooks.
+
+## Interface
+
+The same visual system as Olaa Language and Olaa Note (olaa-platform `prototypes/takenote-ipad-home`; olaa-language `src/styles/app.css`): frosted glass cards on a slowly drifting pastel field with light film grain, rounded 18–28px corners, Inter / San Francisco, the Olaa icon set, light / dark / device theme, Vietnamese and English. Habits' identity colour is the Note prototype's Kodak orange (Language is Fuji green, Note is graphite).
+
+| Shared with Language and Note | In Habits |
+|---|---|
+| Glass top bar: wordmark, date, streak pill, theme button, app switcher Language → Note → Habits | Streak pill counts full days in a row |
+| Floating glass navigation (bottom on phones, side rail from 1000px) | Today · Calendar · Habits · Stats · Me |
+| Today layout: hero ring + stats, checklist, calendar, app cards | Hero ring for the day, week strip, checklist by time of day, mood of the day, freeze card, tip |
+| Note prototype checklist (`.hab`, orange check) and calendar (dot, habit bar, mood) | One-tap check, − / + for counts, Language habits tick themselves |
+| Colour blocks, chips, tags, dialogs, toasts | Stats blocks, badges, Undo toast |
 
 ## What it does
 
@@ -38,7 +50,7 @@ Without Firebase variables the app runs on-device only. `.env.development` and `
 
 ## Stack
 
-Same as Olaa Note: React 18 + Vite 5 + TypeScript (strict), plain CSS with design tokens, hash router, Vitest + Testing Library, ESLint + Prettier, GitHub Actions, Firebase Hosting (site `olaa-habits`). See [ADR-0001](docs/decisions/ADR-0001-web-app-stack.md).
+Same as Olaa Language and Olaa Note: React 18 + Vite 5 + TypeScript (strict), plain CSS with design tokens, hash router, Vitest + Testing Library, ESLint + Prettier, GitHub Actions, Firebase Hosting (site `olaa-habits`). See [ADR-0001](docs/decisions/ADR-0001-web-app-stack.md).
 
 ## Documents
 

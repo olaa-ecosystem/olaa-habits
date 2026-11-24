@@ -10,7 +10,13 @@
 import type { HabitState } from '../../stores/habitState';
 import { addDays, daysBetween, type DayKey } from '../../utils/date';
 import type { Habit } from '../habit-management/types';
-import { doneInWeek, frozenInWeek, isDoneOn, isFrozen } from '../habit-tracking/progress';
+import {
+  dayProgress,
+  doneInWeek,
+  frozenInWeek,
+  isDoneOn,
+  isFrozen,
+} from '../habit-tracking/progress';
 import { isDueOn, isWeekly, weekOf, weeklyQuota } from '../scheduling/schedule';
 
 export interface StreakInfo {
@@ -89,4 +95,22 @@ export function strengthOf(state: HabitState, habit: Habit, today: DayKey): numb
     else if (m === 'miss') score -= alpha * score;
   }
   return Math.max(0, Math.min(1, score));
+}
+
+/**
+ * Days in a row where everything on the list was done (frozen days hold, days with nothing
+ * scheduled are skipped). Today counts once it is complete. Shown in the top bar.
+ */
+export function fullDayStreak(state: HabitState, today: DayKey): number {
+  let n = 0;
+  for (let i = 0; i < 3660; i += 1) {
+    const d = addDays(today, -i);
+    const p = dayProgress(state, d);
+    const started = Object.values(state.habits).some((h) => h.startDate <= d);
+    if (!started) break;
+    if (p.total > 0 && p.done === p.total) n += 1;
+    else if (i === 0 || p.total === 0 || isFrozen(state, d)) continue;
+    else break;
+  }
+  return n;
 }

@@ -6,7 +6,7 @@ Approved in `docs/decisions/ADR-0001-web-app-stack.md` (2026-11-24), matching Ol
 |---|---|
 | Language | TypeScript 5.6, strict |
 | UI | React 18.3, Vite 5.4 |
-| Styling | Plain CSS with design tokens (from Olaa Note) |
+| Styling | Plain CSS; tokens and components from Olaa Language's `app.css` (Olaa glass style) |
 | Router | Hash router (`src/app/router.ts`) |
 | State | Module stores with `useSyncExternalStore` |
 | Local persistence | localStorage, versioned JSON |

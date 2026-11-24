@@ -3,7 +3,10 @@
   "short_name": "Habits",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#fdf7ec",
-  "theme_color": "#fdf7ec",
-  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "background_color": "#edf0ea",
+  "theme_color": "#edf0ea",
+  "icons": [
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "favicon-32.png", "sizes": "32x32", "type": "image/png" }
+  ]
 }
