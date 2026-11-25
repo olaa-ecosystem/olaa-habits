@@ -26,11 +26,11 @@ import { TodayPage } from '../pages/TodayPage';
 import { sectionOf, useRoute, type Route, type Section } from './router';
 
 const NAV: { section: Section; href: string; icon: IconName; label: [string, string] }[] = [
-  { section: 'today', href: '#/', icon: 'habits', label: ['Hôm nay', 'Today'] },
-  { section: 'calendar', href: '#/calendar', icon: 'calendar', label: ['Lịch', 'Calendar'] },
-  { section: 'habits', href: '#/habits', icon: 'collections', label: ['Thói quen', 'Habits'] },
-  { section: 'stats', href: '#/stats', icon: 'progress', label: ['Thống kê', 'Stats'] },
-  { section: 'me', href: '#/me', icon: 'profile', label: ['Hồ sơ', 'Me'] },
+  { section: 'today', href: '#today', icon: 'habits', label: ['Hôm nay', 'Today'] },
+  { section: 'calendar', href: '#calendar', icon: 'calendar', label: ['Lịch', 'Calendar'] },
+  { section: 'habits', href: '#habits', icon: 'collections', label: ['Thói quen', 'Habits'] },
+  { section: 'stats', href: '#stats', icon: 'progress', label: ['Thống kê', 'Stats'] },
+  { section: 'me', href: '#me', icon: 'profile', label: ['Hồ sơ', 'Me'] },
 ];
 
 function nextTheme(theme: ThemeChoice): ThemeChoice {
@@ -70,7 +70,7 @@ function TopBar() {
   }[theme];
   return (
     <header className="topbar">
-      <a href="#/" className="wordmark" style={{ color: 'inherit', textDecoration: 'none' }}>
+      <a href="#today" className="wordmark" style={{ color: 'inherit', textDecoration: 'none' }}>
         olaa <span>habits</span>
       </a>
       <div className="topbar__when">

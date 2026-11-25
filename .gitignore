@@ -3,6 +3,7 @@ node_modules/
 .pnpm-store/
 # build output
 dist/
+dist-artifact/
 build/
 coverage/
 # environment secrets

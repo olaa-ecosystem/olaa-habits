@@ -34,7 +34,7 @@ export function HabitPage({ habitId }: { habitId: string }) {
   if (!habit)
     return (
       <>
-        <BackLink to="#/habits">{tr('Thói quen', 'Habits')}</BackLink>
+        <BackLink to="#habits">{tr('Thói quen', 'Habits')}</BackLink>
         <section className="card">
           <Empty
             icon="habits"
@@ -72,7 +72,7 @@ export function HabitPage({ habitId }: { habitId: string }) {
 
   return (
     <>
-      <BackLink to="#/habits">{tr('Thói quen', 'Habits')}</BackLink>
+      <BackLink to="#habits">{tr('Thói quen', 'Habits')}</BackLink>
       <section className="card habit-head" style={{ marginTop: 8 }}>
         <HabitTile habit={habit} size="lg" />
         <div>

@@ -333,7 +333,7 @@ export function TodayPage({ day: dayParam }: { day: string | null }) {
               {tr('Học ngay', 'Study now')}
             </a>
             {!account.email && account.status !== 'off' && (
-              <a className="btn btn--sm btn--text" href="#/me">
+              <a className="btn btn--sm btn--text" href="#me">
                 {tr('Đăng nhập', 'Sign in')}
               </a>
             )}

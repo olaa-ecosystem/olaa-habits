@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit": "pnpm audit --prod --audit-level high"
+    "audit": "pnpm audit --prod --audit-level high",
+    "build:artifact": "tsc -p tsconfig.json && vite build --mode artifact --outDir dist-artifact"
   },
   "dependencies": {
     "firebase": "13.2.0",

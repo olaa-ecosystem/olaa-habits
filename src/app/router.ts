@@ -1,4 +1,4 @@
-/** Hash router, as in Olaa Language and Olaa Note: works on any static host with no rewrites. */
+/** Hash router: works on any static host with no rewrites. */
 import { useSyncExternalStore } from 'react';
 
 export type Route =
@@ -32,18 +32,49 @@ export function sectionOf(route: Route): Section {
   }
 }
 
+/** Habit ids may hold "_"; plain hashes allow only letters, digits and "-". */
+function encodeId(id: string): string {
+  return id.replace(/_/g, '--');
+}
+function decodeId(id: string): string {
+  return id.replace(/--/g, '_');
+}
+
+/**
+ * Hashes are plain names (`#calendar`, `#habit-<id>`, `#day-2026-11-22`) so a link keeps
+ * working wherever the app is shown, including an Artifact page, which only passes plain
+ * `#name` hashes. The first version's `#/path` links still open the right screen.
+ */
 export function parseRoute(hash: string): Route {
-  const [head, id, sub] = hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const raw = hash.replace(/^#/, '');
+  if (raw.startsWith('/')) return parseLegacy(raw);
+  const day = /^day-(\d{4}-\d{2}-\d{2})$/.exec(raw);
+  if (day) return { name: 'today', day: day[1] ?? null };
+  const habit = /^(habit|edit)-([A-Za-z0-9-]+)$/.exec(raw);
+  if (habit) return { name: habit[1] === 'edit' ? 'edit' : 'habit', id: decodeId(habit[2] ?? '') };
+  switch (raw) {
+    case 'calendar':
+    case 'stats':
+    case 'habits':
+    case 'me':
+    case 'new':
+      return { name: raw };
+  }
+  return { name: 'today', day: null };
+}
+
+function parseLegacy(path: string): Route {
+  const [head, id, sub] = path.split('/').filter(Boolean);
   switch (head) {
     case 'calendar':
       return { name: 'calendar' };
     case 'stats':
       return { name: 'stats' };
     case 'habits':
-    case 'archive': // links from the first version
+    case 'archive':
       return { name: 'habits' };
     case 'me':
-    case 'settings': // links from the first version
+    case 'settings':
       return { name: 'me' };
     case 'new':
       return { name: 'new' };
@@ -61,17 +92,17 @@ export function parseRoute(hash: string): Route {
 export function routeHref(route: Route): string {
   switch (route.name) {
     case 'today':
-      return route.day ? `#/day/${route.day}` : '#/';
+      return route.day ? `#day-${route.day}` : '#today';
     case 'calendar':
     case 'stats':
     case 'habits':
     case 'me':
     case 'new':
-      return `#/${route.name}`;
+      return `#${route.name}`;
     case 'habit':
-      return `#/habit/${encodeURIComponent(route.id)}`;
+      return `#habit-${encodeId(route.id)}`;
     case 'edit':
-      return `#/habit/${encodeURIComponent(route.id)}/edit`;
+      return `#edit-${encodeId(route.id)}`;
   }
 }
 

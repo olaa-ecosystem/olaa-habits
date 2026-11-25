@@ -1,6 +1,6 @@
 /** Create or edit a habit (modules 02.01 and 02.02). */
 import { useState } from 'react';
-import { navigate } from '../app/router';
+import { navigate, routeHref } from '../app/router';
 import { HabitGlyph, Icon } from '../components/Icon';
 import { BackLink, Empty } from '../components/ui';
 import { TEMPLATES } from '../features/habit-management/templates';
@@ -121,7 +121,7 @@ export function HabitFormPage({ habitId }: { habitId: string | null }) {
   if (habitId && !existing)
     return (
       <>
-        <BackLink to="#/habits">{tr('Thói quen', 'Habits')}</BackLink>
+        <BackLink to="#habits">{tr('Thói quen', 'Habits')}</BackLink>
         <section className="card">
           <Empty
             icon="habits"
@@ -194,7 +194,7 @@ export function HabitFormPage({ habitId }: { habitId: string | null }) {
 
   return (
     <>
-      <BackLink to={existing ? `#/habit/${encodeURIComponent(existing.id)}` : '#/habits'}>
+      <BackLink to={existing ? routeHref({ name: 'habit', id: existing.id }) : '#habits'}>
         {existing ? existing.name : tr('Thói quen', 'Habits')}
       </BackLink>
       <div className="page__head">
